@@ -1,0 +1,6 @@
+*jar
+/target/
+.lein-failures
+
+pom.xml.asc
+.lein-repl-history
