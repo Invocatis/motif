@@ -24,6 +24,7 @@ Literals, when used in patterns, simple invoke an equality check on the given va
 
 ```clojure
 (matches? 1 1) ;=> true
+
 (matches? 1 2) ;=> False
 ```
 ## Function patterns
@@ -31,6 +32,7 @@ Functions will be invoked against their given value. Currently, only predicate f
 
 ```clojure
 (matches? pos? 1) ;=> true
+
 (matches? string? 1) ;=> false
 ```
 
@@ -39,7 +41,9 @@ Simply enough, when a regex is matched against a value, the string of that value
 
 ```clojure
 (matches? #"\d*" "123") ;=> true
+
 (matches? #"\d*" 123) ;=> true
+
 (matches? #"\[(\d*\s)*\d*\]" [1 2 3]) ;=> true
 ```
 
@@ -48,6 +52,7 @@ Vector patterns expect to be matched against other seqables, and return false ot
 
 ```clojure
 (matches? [1 2] [1 2]) ;=> true
+
 (matches? [pos? neg?] [1 -1]) ;=> true
 ```
 
@@ -56,8 +61,11 @@ Seq patterns work similarly to vector patterns, however, they will match on uneq
 
 ```clojure
 (matches? '(1 2 3) [1]) ;=> true
+
 (matches? '(1) [1 2 3 4]) ;=> true
+
 (matches? (repeat even?) [2 2 2 2]) ;=> true
+
 (matches? (repeat odd?) (repeat 1)) ;=> infinite loop!
 ```
 ## Map patterns
@@ -66,10 +74,12 @@ Maps have act in very predictable ways, with some fun and interesting caveats. L
 In simple cases, for a given key-value pair in a map pattern, the value associated with the same key in a target map is is matched against the corresponding pattern value.
 
 ```clojure
-(matches? {:key :pattern-value} {:key :target-value})
-  ;== (matches? :pattern-value :target-value)
+(matches? {:key :pattern-value} {:key :target-value}) ;== (matches? :pattern-value :target-value)
+
 (matches? {1 2} {1 2 3 4}) ;=> true
+
 (matches? {1 2 3 4} {1 2}) ;=> false
+
 (matches? {:key :value :key1 nil} {:key :value}) ;=> true
 ```
 
@@ -81,6 +91,7 @@ This illuminates some fascinating possibilities for us; we can use function as p
 
 ```clojure
 (matches? {:key 1 #(count (keys %)) 1} {:key 1}) ;=> true
+
 (matches? {pos? false neg? false} 0) ;=> true
 ```
 
@@ -90,7 +101,9 @@ Sets work differently than all of our previous patterns. Given a set matching ag
 
 ```clojure
 (matches? #{1 2 3} 1) ;=> true
+
 (matches? #{1 2} [1 1 1 2 2]) ;=> true
+
 (matches? #{1} [1 2]) ;=> false
 ```
 
@@ -98,6 +111,7 @@ Let's see a useful combination of our map and set patterns. Let's see how we cou
 
 ```clojure
 (matches? {:x 1 :y 2 keys #{:x :y}} {:x 1 :y 2}) ;=> true
+
 (matches? {:x 1 :y 2 keys #{:x :y}} {:x 1 :y 2 :z 3}) ;=> false
 ```
 
@@ -109,6 +123,7 @@ Let's dive deeper: we saw that with maps, each key must satisfy its associated p
 
 ```clojure
 (matches? {pos? false neg? false} 0) ;=> true
+
 (matches? {even? true neg? true} -3) ;=> false
 ```
 
@@ -116,6 +131,7 @@ Great! Onto sets and conjunctions: sets require that the target matches one of i
 
 ```clojure
 (matches? #{pos? neg?} -1) ;=> true
+
 (matches? #{str? int?} 1) ;=> true
 ```
 
@@ -125,9 +141,14 @@ That's all you need to go on into the world. But before you go, let's look at so
 
 ```clojure
 (matches? (flatten (repeat (list odd? even?))) [1 2 3 4]) ;=> true
+
 (matches? {first 1 last 4} [1 2 3 4]) ;=> true
+
 (matches? {0 1 1 2 2 3 3 4} [1 2 3 4]) ;=> true
+
 (matches? {(partial reduce max) 4} [1 2 3 4]) ;=> true
+
 (matches? #{{inc 1} {dec 1}} 2) ;=> true
+
 (matches? #{(repeat odd?) (repeat even?)} [1 1 1 1 1 1]) ;=> true
 ```
