@@ -19,6 +19,12 @@ Latest release: 0.1.0
 
 Motif brings powerful, recursive, and fun pattern matching Clojure. Focusing on the power of the data and functions, not macros, Motif provides dynamic pattern matching that works magically well with all that Clojure has provided us.
 
+Let's get started!
+
+```clojure
+(require '[motif.core :refer [matches?]])
+```
+
 ## Literal patterns
 Literals, when used in patterns, simple invoke an equality check on the given values.
 
