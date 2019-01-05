@@ -17,10 +17,16 @@ Latest release: 0.1.0
 ```
 ## Overview
 
-Motif brings powerful, recursive, and fun pattern matching Clojure. Focusing on the power of the data and functions, not macros, Motif provides dynamic pattern matching that works magically well with all that Clojure has provided us.
+Motif brings powerful, recursive, and fun pattern matching Clojure. Focusing on the power of data structures and functions, not macros, Motif provides dynamic powers matching that works magically well with all that Clojure has provided us.
+
+Let's get started!
+
+```clojure
+(require '[motif.core :refer [matches?]])
+```
 
 ## Literal patterns
-Literals, when used in patterns, simple invoke an equality check on the given values.
+Literals, when used in patterns, simply invoke an equality check on the given target.
 
 ```clojure
 (matches? 1 1) ;=> true
@@ -28,7 +34,7 @@ Literals, when used in patterns, simple invoke an equality check on the given va
 (matches? 1 2) ;=> False
 ```
 ## Function patterns
-Functions will be invoked against their given value. Currently, only predicate functions are supported (any -> boolean).
+Functions as patterns are invoked against the targets. Monadic functions are only supported.
 
 ```clojure
 (matches? pos? 1) ;=> true
@@ -37,7 +43,7 @@ Functions will be invoked against their given value. Currently, only predicate f
 ```
 
 ## Regex patterns
-Simply enough, when a regex is matched against a value, the string of that value is used as the input for a standard regular expression matching. Thus, a string value or any other Clojure value may be used.
+Regex patterns are compared to the string representations of their targets.
 
 ```clojure
 (matches? #"\d*" "123") ;=> true
@@ -48,7 +54,7 @@ Simply enough, when a regex is matched against a value, the string of that value
 ```
 
 ## Vector patterns
-Vector patterns expect to be matched against other seqables, and return false otherwise. Furthermore, vectors only match against same length values.
+Each element in a vector pattern is matched against the corresponding value in the given target. If a non-seqable target is given, or a seqable with differing length, then false is returned.
 
 ```clojure
 (matches? [1 2] [1 2]) ;=> true
@@ -57,7 +63,7 @@ Vector patterns expect to be matched against other seqables, and return false ot
 ```
 
 ## Seq patterns
-Seq patterns work similarly to vector patterns, however, they will match on unequal length values. Lazy or infinite sequences may be used as well, however, beware of the potential for infinite loops!
+Seq patterns work similarly to vector patterns, however, they do not require their targets be of equal length. This allows for infinite length sequences to be used as patterns, however, beware of infinite loops!
 
 ```clojure
 (matches? '(1 2 3) [1]) ;=> true
@@ -69,7 +75,7 @@ Seq patterns work similarly to vector patterns, however, they will match on uneq
 (matches? (repeat odd?) (repeat 1)) ;=> infinite loop!
 ```
 ## Map patterns
-Maps have act in very predictable ways, with some fun and interesting caveats. Let's analyze their predictability first.
+Maps act in very predictable ways, with some fun and interesting caveats. Let's analyze their predictability first.
 
 In simple cases, for a given key-value pair in a map pattern, the value associated with the same key in a target map is is matched against the corresponding pattern value.
 
@@ -80,14 +86,15 @@ In simple cases, for a given key-value pair in a map pattern, the value associat
 
 (matches? {1 2 3 4} {1 2}) ;=> false
 
-(matches? {:key :value :key1 nil} {:key :value}) ;=> true
+(matches? {:key1 :value :key2 nil} {:key1 :value}) ;=> true
+(matches? {:key1 :value :key2 nil} {:key1 :value :key2 nil}) ;=> true
 ```
 
-Furthermore, not all keys in the target need be present in the pattern (as seen in the previous example). The opposite is also true, given that the key is being matched against nil.
+Furthermore, not all keys in the target need be present in the pattern (as seen in the previous example). Similarly, if a pattern matches a key as nil, the pattern will match if the target map either does not contain the key or if the key is associated with the value nil.
 
-When accessing a maps value using a key, motif will apply the key as a function if at all possible (ifn?). In all other cases, the get function will be used instead.
+If a key in the pattern map is of a simple type, the key will be gotten using the get function. If the pattern map contains keys that are IFns, they will be invoked with the target map as a parameter. Thus, a keyword key will be invoked on the target, and not gotten. Furthermore, any other possible function will be applied to the target, and not gotten in the standard sense.
 
-This illuminates some fascinating possibilities for us; we can use function as pattern keys to get a more holistic look on our maps or even on other value types.
+This illuminates some fascinating possibilities for us; we can use functions as pattern keys to get a more holistic look on our maps. Beyond this, we can apply pattern maps to non maps targets in exciting ways.
 
 ```clojure
 (matches? {:key 1 #(count (keys %)) 1} {:key 1}) ;=> true
@@ -132,7 +139,7 @@ Great! Onto sets and conjunctions: sets require that the target matches one of i
 ```clojure
 (matches? #{pos? neg?} -1) ;=> true
 
-(matches? #{str? int?} 1) ;=> true
+(matches? #{pos? neg?} 0) ;=> false
 ```
 
 ## That's it!
@@ -150,5 +157,7 @@ That's all you need to go on into the world. But before you go, let's look at so
 
 (matches? #{{inc 1} {dec 1}} 2) ;=> true
 
-(matches? #{(repeat odd?) (repeat even?)} [1 1 1 1 1 1]) ;=> true
+(matches? (complement #{1 2 3}) 4) ;=> true
+
+(matches? (repeat odd?) [1 1 1 1 1 1]) ;=> true
 ```
