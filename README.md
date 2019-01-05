@@ -87,6 +87,7 @@ In simple cases, for a given key-value pair in a map pattern, the value associat
 (matches? {1 2 3 4} {1 2}) ;=> false
 
 (matches? {:key1 :value :key2 nil} {:key1 :value}) ;=> true
+
 (matches? {:key1 :value :key2 nil} {:key1 :value :key2 nil}) ;=> true
 ```
 
