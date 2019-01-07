@@ -34,12 +34,14 @@ Literals, when used in patterns, simply invoke an equality check on the given ta
 (matches? 1 2) ;=> False
 ```
 ## Function patterns
-Functions as patterns are invoked against the targets. Monadic functions are only supported.
+Functions as patterns are invoked on the given target. Monadic functions are only supported.
 
 ```clojure
 (matches? pos? 1) ;=> true
 
 (matches? string? 1) ;=> false
+
+(matches? inc 1) ;=> true
 ```
 
 ## Regex patterns
@@ -54,12 +56,14 @@ Regex patterns are compared to the string representations of their targets.
 ```
 
 ## Vector patterns
-Each element in a vector pattern is matched against the corresponding value in the given target. If a non-seqable target is given, or a seqable with differing length, then false is returned.
+Each element in a vector pattern is matched against the corresponding value in the given target. If a non-seqable target is given, or a seqable with differing length, then false is returned. Strings, when matched against vectors, are considered seqable.
 
 ```clojure
 (matches? [1 2] [1 2]) ;=> true
 
 (matches? [pos? neg?] [1 -1]) ;=> true
+
+(matches? [\a \b] "ab") ;=> true
 ```
 
 ## Seq patterns
@@ -105,7 +109,7 @@ This illuminates some fascinating possibilities for us; we can use functions as 
 
 ## Set patterns
 
-Sets work differently than all of our previous patterns. Given a set matching against an atomic target, motif checks that at least one of the set's patterns matches against the given target. Given a seqable target, motif checks that all values in the collection match the set.
+Sets work differently than all of our previous patterns. Given an atomic value matching against a set, motif checks that at least one of the set's patterns matches the given target. Given a seqable target, motif checks that all values in the collection match the set.
 
 ```clojure
 (matches? #{1 2 3} 1) ;=> true
@@ -113,6 +117,19 @@ Sets work differently than all of our previous patterns. Given a set matching ag
 (matches? #{1 2} [1 1 1 2 2]) ;=> true
 
 (matches? #{1} [1 2]) ;=> false
+```
+
+Strings, when matched against set patterns, are not considered seqable. Simply put, any functionality gained if we did consider them seqable, is covered by a very simple regex.
+
+```clojure
+; *** If we considered strings seqable against sets, which we don't ***
+(matches? #{\a \b} "aaaabbaaba") ;=> true (not really)
+; easily covered by
+(matches? #"(a|b)*" "aaaabbaaba") ;=> true
+; *** Thus, we consider them non-seqable as follows ***
+(matches? #{"asdf" "qwer" "zxcv"} "asdf") ;=> true
+
+(matches? #{\a \b} "aaaabbaaba") ;=> false
 ```
 
 Let's see a useful combination of our map and set patterns. Let's see how we could check if a map matches a pattern and additionally only contains a given set of keys.
