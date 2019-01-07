@@ -4,6 +4,10 @@
 
 (declare compile-pattern)
 
+(defn- should-seq?
+  [any]
+  (and (seqable? any) (not (string? any))))
+
 (defn- compile-element
   [pattern accessor]
   (cond
@@ -24,7 +28,9 @@
 (defn- compile-vector
   [pattern accessor]
   (reduce disjunction
-    #(= (count (accessor %)) (count pattern))
+    (disjunction
+      seqable?
+      #(= (count (accessor %)) (count pattern)))
     (map-indexed
       (fn [i p]
         (compile-pattern p
@@ -53,7 +59,7 @@
     (fn [target]
       (let [value (accessor target)]
         (cond
-          (seqable? value) (every? conjunc value)
+          (should-seq? value) (every? conjunc value)
           :else (conjunc value))))))
 
 (defn- compile-regex
