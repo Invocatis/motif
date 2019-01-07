@@ -79,14 +79,6 @@
       (regex? pattern) (compile-regex pattern accessor)
       :else (compile-element pattern accessor))))
 
-(defn matcher
-  "Given a pattern, compiles the pattern into a function f,
-  such that (f v) == (match pattern v). To be used in cases
-  where several clauses must be matched, as to avoid redundant
-  compilation."
-  [pattern]
-  (compile-pattern pattern))
-
 (defn matches?
   "Given a pattern, and an expression, recursively determines
   if the expression matches the pattern. Patterns are described
@@ -129,8 +121,10 @@
   Given the expression passed matches the given pattern,
   true will be returned. Otherwise, false will be returned.
   "
-  [pattern expr]
-    ((compile-pattern pattern) expr))
+  ([pattern]
+    (compile-pattern pattern))
+  ([pattern expr]
+    (apply (compile-pattern pattern) [expr])))
 
 (defmacro match
   "Takes a subject expression, and a set of clauses.
