@@ -35,10 +35,10 @@
     (map-indexed
       (fn [i p]
         (compile-pattern p
-          (comp #(get % i) accessor)))
+          (comp #(nth % i) accessor)))
       pattern)))
 
-(defn- compile-lazyseq
+(defn- compile-seq
   [pattern accessor]
   (fn [value]
     (let [n (count (accessor value))]
@@ -82,7 +82,7 @@
       (map? pattern) (compile-map pattern accessor)
       (set? pattern) (compile-set pattern accessor)
       (vector? pattern) (compile-vector pattern accessor)
-      (seq? pattern) (compile-lazyseq pattern accessor)
+      (seq? pattern) (compile-seq pattern accessor)
       (regex? pattern) (compile-regex pattern accessor)
       :else (compile-element pattern accessor))))
 
