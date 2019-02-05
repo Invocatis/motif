@@ -161,6 +161,8 @@ Great! Onto sets and conjunctions: sets require that the target matches one of i
 ```
 
 ## Some things to note
+
+### Non-symmetry
 matches? is not symmetric! That is (matches? a b) does not imply (matches? b a). This is due to patterns being treated differently that their targets. Consider the following:
 ```clojure
 (matches? [\a \b] "ab") ;=> true
@@ -169,6 +171,21 @@ matches? is not symmetric! That is (matches? a b) does not imply (matches? b a).
 ```
 
 A vector pattern will attempt to seq its target, returning false if it can't. In the first case, the string "ab" is seqable as a character vector and matches the pattern. However, as discussed before, string patterns are treated as atomic values, and thus equality is checked. As (= "ab" [\a \b]) is false, the pattern does not match
+
+### When collection patterns get in the way
+
+Sometimes, you want to treat collections as atomic values, checking equality opposed to using their special function in motif. In these cases, remember how functions work! Instead of using the collection as the pattern, explicitly check for equality yourself:
+
+```clojure
+(def m1 {:x 1 :y 2 str "{:x 1 :y 2}"})
+(def m2 {:x 1 :y 2})
+
+(matches? m1 m2) ;=> true
+
+(matches? m1 m1) ;=> false
+
+(matches? (partial = m1) m1) ;=> true
+```
 
 ## That's it!
 
