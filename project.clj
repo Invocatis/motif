@@ -2,11 +2,14 @@
   :description "Recursive, data driven, pattern matching for Clojure"
   :url "https://github.com/invocatis/motif"
 
+  :license {:name "GNU GENERAL PUBLIC LICENSE"
+            :url "https://www.gnu.org/licenses/gpl.txt"}
+
   :dependencies [[org.clojure/clojure "1.9.0"]]
 
   :source-paths ["src/main/clojure"]
   :test-paths ["src/test/clojure"]
-  
+
   :target-path "target/%s"
 
   :profiles
