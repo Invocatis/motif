@@ -1,6 +1,6 @@
 (ns motif.core
   (:require
-    [motif.util :refer :all]))
+    [motif.util :refer [conjunction disjunction]]))
 
 (declare compile-pattern)
 
