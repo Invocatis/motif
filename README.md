@@ -160,6 +160,16 @@ Great! Onto sets and conjunctions: sets require that the target matches one of i
 (matches? #{pos? neg?} 0) ;=> false
 ```
 
+## Some things to note
+matches? is not symmetric! That is (matches? a b) does not imply (matches? b a). This is due to patterns being treated differently that their targets. Consider the following:
+```clojure
+(matches? [\a \b] "ab") ;=> true
+
+(matches? "ab" [\a \b]) ;=> false
+```
+
+A vector pattern will attempt to seq its target, returning false if it can't. In the first case, the string "ab" is seqable as a character vector and matches the pattern. However, as discussed before, string patterns are treated as atomic values, and thus equality is checked. As (= "ab" [\a \b]) is false, the pattern does not match
+
 ## That's it!
 
 That's all you need to go on into the world. But before you go, let's look at some fun examples that may come in handy some day:
