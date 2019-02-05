@@ -181,5 +181,5 @@ That's all you need to go on into the world. But before you go, let's look at so
 
 (matches? (repeat odd?) [1 1 1 1 1 1]) ;=> true
 
-(matches? {(juxt inc dec even?) [2 0 false]} 1)
+(matches? {(juxt inc dec even?) [2 0 false]} 1) ;=> true
 ```
