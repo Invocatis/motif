@@ -171,6 +171,8 @@ That's all you need to go on into the world. But before you go, let's look at so
 
 (matches? {0 1 1 2 2 3 3 4} [1 2 3 4]) ;=> true
 
+(matches? {some? true inc 1} 0) ;=> true
+
 (matches? {(partial reduce max) 4} [1 2 3 4]) ;=> true
 
 (matches? #{{inc 1} {dec 1}} 2) ;=> true
@@ -178,4 +180,6 @@ That's all you need to go on into the world. But before you go, let's look at so
 (matches? (complement #{1 2 3}) 4) ;=> true
 
 (matches? (repeat odd?) [1 1 1 1 1 1]) ;=> true
+
+(matches? {(juxt inc dec even?) [2 0 false]} 1)
 ```
