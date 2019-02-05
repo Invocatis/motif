@@ -6,8 +6,7 @@
 
   :source-paths ["src/main/clojure"]
   :test-paths ["src/test/clojure"]
-
-  :main motif.core
+  
   :target-path "target/%s"
 
   :profiles
