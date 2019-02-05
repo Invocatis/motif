@@ -1,6 +1,7 @@
 *jar
 /target/
 .lein-failures
-
+.gitignore
+.nrepl-port
 pom.xml.asc
 .lein-repl-history
