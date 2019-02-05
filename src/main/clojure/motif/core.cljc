@@ -29,7 +29,7 @@
   [pattern accessor]
   (reduce disjunction
     (disjunction
-      seqable?
+      (comp seqable? accessor)
       #(= (count (accessor %)) (count pattern)))
     (map-indexed
       (fn [i p]
