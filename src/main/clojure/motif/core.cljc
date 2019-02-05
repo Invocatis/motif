@@ -1,6 +1,7 @@
-(ns motif.core
-  (:require
-    [motif.util :refer [conjunction disjunction]]))
+(ns motif.core)
+
+(def disjunction every-pred)
+(def conjunction some-fn)
 
 (declare compile-pattern)
 
