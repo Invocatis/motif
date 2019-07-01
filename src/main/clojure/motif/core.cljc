@@ -24,7 +24,7 @@
         (let [acc (if (ifn? k) k #(get % k))]
           (compile-pattern v
             (comp acc accessor))))
-        pattern)))
+      pattern)))
 
 (defn- compile-vector
   [pattern accessor]
@@ -55,7 +55,7 @@
 
 (defn- compile-set
   [pattern accessor]
-  (let [subpatterns (map #(compile-pattern %) pattern)
+  (let [subpatterns (map #(compile-pattern % accessor) pattern)
         conjunc (apply conjunction subpatterns)]
     (fn [target]
       (let [value (accessor target)]
@@ -75,16 +75,14 @@
   (= (type any) regex-type))
 
 (defn- compile-pattern
-  ([pattern]
-    (compile-pattern pattern identity))
-  ([pattern accessor]
-    (cond
-      (map? pattern) (compile-map pattern accessor)
-      (set? pattern) (compile-set pattern accessor)
-      (vector? pattern) (compile-vector pattern accessor)
-      (seq? pattern) (compile-seq pattern accessor)
-      (regex? pattern) (compile-regex pattern accessor)
-      :else (compile-element pattern accessor))))
+  [pattern accessor]
+  (cond
+    (map? pattern) (compile-map pattern accessor)
+    (set? pattern) (compile-set pattern accessor)
+    (vector? pattern) (compile-vector pattern accessor)
+    (seq? pattern) (compile-seq pattern accessor)
+    (regex? pattern) (compile-regex pattern accessor)
+    :else (compile-element pattern accessor)))
 
 (defn matches?
   "Given a pattern, and an expression, recursively determines
@@ -129,9 +127,9 @@
   true will be returned. Otherwise, false will be returned.
   "
   ([pattern]
-    (compile-pattern pattern))
+   (compile-pattern pattern identity))
   ([pattern expr]
-    (apply (compile-pattern pattern) [expr])))
+   (apply (compile-pattern pattern identity) [expr])))
 
 (defmacro match
   "Takes a subject expression, and a set of clauses.
@@ -146,10 +144,10 @@
   default expression is provided, and no clause matches, nil will
   be returned"
   ([expr]
-    nil)
+   nil)
   ([expr default]
-    `~default)
+   `~default)
   ([expr pattern result & statements]
-    `(if (matches? ~pattern ~expr)
-       ~result
-       ~(cons `match (cons expr statements)))))
+   `(if (matches? ~pattern ~expr)
+      ~result
+      ~(cons `match (cons expr statements)))))
