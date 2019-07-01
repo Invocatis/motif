@@ -1,57 +1,112 @@
 (ns motif.core)
 
-(def disjunction every-pred)
-(def conjunction some-fn)
+(deftype Matched []
+  Object
+  (toString [_] "_"))
 
-(declare compile-pattern)
+(defmethod print-method motif.core.Matched
+  [_ ^java.io.Writer w]
+  (.write w "_"))
+
+(def MATCHED (->Matched))
+
+(defn matched?
+  [any]
+  (identical? MATCHED any))
+
+(defn- disjunction
+  [& predicates]
+  (fn [value]
+    (or
+      (first
+        (filter (complement matched?)
+          (map #(apply % [value]) predicates)))
+      MATCHED)))
+
+(defn- conjunction
+  [& predicates]
+  (fn [value]
+    (let [tested (map #(apply % [value]) predicates)]
+      (or
+        (first (filter matched? tested))
+        (last tested)))))
+
+(declare matches? compile-pattern)
 
 (defn- should-seq?
   [any]
   (and (seqable? any) (not (string? any))))
 
+(defn- matched-every?
+  [tested]
+  (if (every? matched? tested)
+    MATCHED
+    tested))
+
 (defn- compile-element
   [pattern accessor]
   (cond
-    (fn? pattern) #(boolean (pattern (accessor %)))
-    :else #(= (accessor %) pattern)))
+    (fn? pattern) (fn [target] (let [value (accessor target)]
+                                 (if (pattern value) MATCHED value)))
+    :else (fn [target] (let [value (accessor target)]
+                         (if (= value pattern) MATCHED value)))))
+
+(defn- precompile-map
+  [pattern accessor]
+  (map
+    (fn [[k v]]
+      [k
+       (let [acc (if (ifn? k) k #(get % k))]
+         (compile-pattern v
+           (comp acc accessor)))])
+    pattern))
 
 (defn- compile-map
   [pattern accessor]
-  (reduce
-    disjunction
-    (map
-      (fn [[k v]]
-        (let [acc (if (ifn? k) k #(get % k))]
-          (compile-pattern v
-            (comp acc accessor))))
-      pattern)))
+  (let [precompiled (precompile-map pattern accessor)]
+    (fn [target]
+      (let [value (accessor target)
+            tested (map (fn [[k v]] [k (apply v [value])]) precompiled)]
+        (if (every? (fn [[k v]] (matched? v)) tested)
+          MATCHED
+          (into {}
+            (filter
+              (fn [[k v]]
+                (not (matched? v))))
+            tested))))))
+
+(defn- precompile-vector
+  [pattern accessor]
+  (map-indexed
+    (fn [i p]
+      (compile-pattern p
+        (comp #(nth % i) accessor)))
+    pattern))
 
 (defn- compile-vector
   [pattern accessor]
-  (reduce disjunction
-    (disjunction
-      (comp seqable? accessor)
-      #(= (count (accessor %)) (count pattern)))
-    (map-indexed
-      (fn [i p]
-        (compile-pattern p
-          (comp #(nth % i) accessor)))
-      pattern)))
+  (let [subpatterns (precompile-vector pattern accessor)]
+    (fn [target]
+      (let [value (accessor target)]
+        (when (matches? (array-map seqable? true count (count pattern)) value)
+          (let [tested (into (empty value) (map #(apply % [value]) subpatterns))]
+            (matched-every? tested)))))))
+
+(defn- precompile-seq
+  [pattern accessor]
+  (map-indexed
+    (fn [i p]
+      (compile-pattern p
+        (comp #(nth % i nil) accessor)))
+    pattern))
 
 (defn- compile-seq
   [pattern accessor]
-  (fn [value]
-    (let [n (count (accessor value))]
-      (every?
-        boolean
-        (map
-          #(apply % [value])
-          (take n
-            (map-indexed
-              (fn [i p]
-                (compile-pattern p
-                  (comp #(nth % i nil) accessor)))
-              pattern)))))))
+  (let [precompiled (precompile-seq pattern accessor)]
+    (fn [value]
+      (let [n (count (accessor value))
+            tested (map #(apply % [value]) (take n precompiled))]
+        (matched-every? tested)))))
 
 (defn- compile-set
   [pattern accessor]
@@ -60,13 +115,15 @@
     (fn [target]
       (let [value (accessor target)]
         (cond
-          (should-seq? value) (every? conjunc value)
+          (should-seq? value) (matched-every? (into (empty value) (map conjunc value)))
           :else (conjunc value))))))
 
 (defn- compile-regex
   [pattern accessor]
   (fn [value]
-    (boolean (re-matches pattern (-> value accessor str)))))
+    (if (re-matches pattern (-> value accessor str))
+      MATCHED
+      value)))
 
 (def ^:private regex-type (type #""))
 
@@ -126,6 +183,16 @@
   Given the expression passed matches the given pattern,
   true will be returned. Otherwise, false will be returned.
   "
+  ([pattern]
+   (compile-pattern pattern identity))
+  ([pattern expr]
+   (matched? (apply (compile-pattern pattern identity) [expr]))))
+
+(defn diff
+  "Given a pattern, and an expression, recursively matches
+   the expression to find all differences. Functions very
+   similarily to matches?, but returns all mismatched values,
+   or the MATCHED singleton, represented by _"
   ([pattern]
    (compile-pattern pattern identity))
   ([pattern expr]
