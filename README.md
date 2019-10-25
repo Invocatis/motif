@@ -192,7 +192,7 @@ Sometimes, you want to treat collections as atomic values, checking equality opp
 That's all you need to go on into the world. But before you go, let's look at some fun examples that may come in handy some day:
 
 ```clojure
-(matches? (flatten (repeat (list odd? even?))) [1 2 3 4]) ;=> true
+(matches? (interleave (repeat odd?) (repeat even?)) [1 2 3 4]) ;=> true
 
 (matches? {first 1 last 4} [1 2 3 4]) ;=> true
 
