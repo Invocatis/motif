@@ -81,7 +81,9 @@ Seq patterns work similarly to vector patterns, however, they do not require the
 ## Map patterns
 Maps act in very predictable ways, with some fun and interesting caveats. Let's analyze their predictability first.
 
-In simple cases, for a given key-value pair in a map pattern, the value associated with the same key in a target map is is matched against the corresponding pattern value.
+In 
+
+cases, for a given key-value pair in a map pattern, the value associated with the same key in a target map is is matched against the corresponding pattern value.
 
 ```clojure
 (matches? {:key :pattern-value} {:key :target-value}) ;== (matches? :pattern-value :target-value)
@@ -142,9 +144,9 @@ Let's see a useful combination of our map and set patterns. Let's see how we cou
 
 ## Logic patterns
 
-Fantastically enough, we need not introduce any new magic in this section! Everything we need for simple logical disjunctions and conjunctions is already at our finger tips. In fact, we just went over them: maps serve us a disjunctions, and sets are our conjunctions.
+Fantastically enough, we need not introduce any new magic in this section! Everything we need for logical disjunctions (or) and conjunctions (and) is already at our finger tips. In fact, we just went over them: map serve as our ands, and sets as our ors.
 
-Let's dive deeper: we saw that with maps, each key must satisfy its associated pattern. However, as we can use function as our keys, the disjunctive pattern simply falls out for us.
+Let's take a look: we saw that with maps, each key must satisfy its associated pattern. However, as we can use function as our keys, the and pattern simply falls out for us.
 
 ```clojure
 (matches? {pos? false neg? false} 0) ;=> true
@@ -152,7 +154,7 @@ Let's dive deeper: we saw that with maps, each key must satisfy its associated p
 (matches? {even? true neg? true} -3) ;=> false
 ```
 
-Great! Onto sets and conjunctions: sets require that the target matches one of its contained patterns. Sounds very much like an `or` clause.
+Great! Onto sets and ors: sets require that the target matches one of its contained patterns, just as an or statement.
 
 ```clojure
 (matches? #{pos? neg?} -1) ;=> true
