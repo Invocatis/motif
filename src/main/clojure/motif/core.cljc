@@ -2,10 +2,6 @@
 
 (declare compile-pattern)
 
-(defn- should-seq?
-  [any]
-  (and (seqable? any) (not (string? any))))
-
 (defn- compile-element
   [pattern accessor]
   (cond
@@ -52,13 +48,9 @@
 
 (defn- compile-set
   [pattern accessor]
-  (let [subpatterns (map #(compile-pattern %) pattern)
-        disjunc (apply some-fn subpatterns)]
+  (let [subpatterns (map #(compile-pattern % accessor) pattern)]
     (fn [target]
-      (let [value (accessor target)]
-        (cond
-          (should-seq? value) (every? disjunc value)
-          :else (disjunc value))))))
+      (not (empty? (filter identity (map (fn [sp] (sp target)) subpatterns)))))))
 
 (defn- compile-regex
   [pattern accessor]
