@@ -53,12 +53,12 @@
 (defn- compile-set
   [pattern accessor]
   (let [subpatterns (map #(compile-pattern %) pattern)
-        conjunc (apply some-fn subpatterns)]
+        disjunc (apply some-fn subpatterns)]
     (fn [target]
       (let [value (accessor target)]
         (cond
-          (should-seq? value) (every? conjunc value)
-          :else (conjunc value))))))
+          (should-seq? value) (every? disjunc value)
+          :else (disjunc value))))))
 
 (defn- compile-regex
   [pattern accessor]
