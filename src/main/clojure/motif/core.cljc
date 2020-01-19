@@ -1,8 +1,5 @@
 (ns motif.core)
 
-(def disjunction every-pred)
-(def conjunction some-fn)
-
 (declare compile-pattern)
 
 (defn- should-seq?
@@ -18,7 +15,7 @@
 (defn- compile-map
   [pattern accessor]
   (reduce
-    disjunction
+    every-pred
     (map
       (fn [[k v]]
         (let [acc (if (ifn? k) k #(get % k))]
@@ -28,8 +25,8 @@
 
 (defn- compile-vector
   [pattern accessor]
-  (reduce disjunction
-    (disjunction
+  (reduce every-pred
+    (every-pred
       (comp seqable? accessor)
       #(= (count (accessor %)) (count pattern)))
     (map-indexed
@@ -56,7 +53,7 @@
 (defn- compile-set
   [pattern accessor]
   (let [subpatterns (map #(compile-pattern %) pattern)
-        conjunc (apply conjunction subpatterns)]
+        conjunc (apply some-fn subpatterns)]
     (fn [target]
       (let [value (accessor target)]
         (cond
