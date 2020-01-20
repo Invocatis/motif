@@ -4,15 +4,15 @@ Recursive, data driven, pattern matching for Clojure
 
 ## Releases and dependency information
 
-Latest release: 0.1.0
+Latest release: 0.1.1
 ```
-[motif "0.1.0"]
+[motif "0.1.1"]
 ```
 ```
 <dependency>
   <groupId>motif</groupId>
   <artifactId>motif</artifactId>
-  <version>0.1.0</version>
+  <version>0.1.1</version>
 </dependency>
 ```
 ## Overview
