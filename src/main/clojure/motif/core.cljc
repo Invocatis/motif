@@ -2,13 +2,25 @@
 
 (declare compile-pattern)
 
+(defn- and-pattern
+  [p1 p2]
+  (fn [target] (and (p1 target) (p2 target))))
+
+(defn- strict?
+  [pattern]
+  (-> pattern meta :!) )
+
+(defn- compile-use
+  [pattern accessor pred]
+  (fn [target] (pred pattern (accessor target))))
+
 (defn- compile-element
   [pattern accessor]
   (cond
     (fn? pattern) #(boolean (pattern (accessor %)))
     :else #(= (accessor %) pattern)))
 
-(defn- compile-map
+(defn- compile-simple-map
   [pattern accessor]
   (reduce
     every-pred
@@ -19,17 +31,35 @@
             (comp acc accessor))))
       pattern)))
 
+(defn- compile-map
+  [pattern accessor]
+  (if (empty? pattern)
+    (if (strict? pattern)
+      (fn [target] (empty? (accessor target)))
+      (fn [target] true))
+    (if (strict? pattern)
+      (and-pattern
+        (compile-simple-map pattern accessor)
+        (fn [target] (every? (partial contains? (accessor target)) (keys pattern))))
+      (compile-simple-map pattern accessor))))
+
+(defn- compile-simple-vector
+  [pattern accessor]
+  (let [subpatterns (map-indexed
+                      (fn [i p] (compile-pattern p (comp #(nth % i) accessor)))
+                      pattern)]
+    (fn [target]
+      (and
+        (<= (count pattern) (count target))
+        (every? #(% (accessor target)) subpatterns)))))
+
 (defn- compile-vector
   [pattern accessor]
-  (reduce every-pred
-    (every-pred
-      (comp seqable? accessor)
-      #(= (count (accessor %)) (count pattern)))
-    (map-indexed
-      (fn [i p]
-        (compile-pattern p
-          (comp #(nth % i) accessor)))
-      pattern)))
+  (if (strict? pattern)
+    (and-pattern
+      (fn [target] (= (count pattern) (count (accessor target))))
+      (compile-simple-vector pattern accessor))
+    (compile-simple-vector pattern accessor)))
 
 (defn- compile-seq
   [pattern accessor]
@@ -46,11 +76,30 @@
                   (comp #(nth % i nil) accessor)))
               pattern)))))))
 
+(defn compile-set*
+  [pattern accessor]
+  (let [subpatterns (map #(compile-pattern %) pattern)]
+    (if (strict? pattern)
+      (fn [target]
+        (let [sr (map (fn [t] (map (fn [sp] (sp t)) subpatterns)) target)]
+          (and
+            (every? (partial some identity) sr)
+            (every?
+              identity
+              (reduce
+                (fn [x y] (map #(or %1 %2) x y))
+                sr)))))
+      (fn [target]
+        (every? (apply some-fn subpatterns) (accessor target))))))
+
 (defn- compile-set
   [pattern accessor]
   (let [subpatterns (map #(compile-pattern % accessor) pattern)]
-    (fn [target]
-      (not (empty? (filter identity (map (fn [sp] (sp target)) subpatterns)))))))
+    (if (strict? pattern)
+      (fn [target]
+        (every? identity (map (fn [sp] (sp target)) subpatterns)))
+      (fn [target]
+        (not (empty? (filter identity (map (fn [sp] (sp target)) subpatterns))))))))
 
 (defn- compile-regex
   [pattern accessor]
@@ -68,11 +117,31 @@
    (compile-pattern pattern identity))
   ([pattern accessor]
    (cond
-     (map? pattern) (compile-map pattern accessor)
-     (set? pattern) (compile-set pattern accessor)
+     (-> pattern meta :=)
+     (compile-use pattern accessor =)
+
+     (-> pattern meta :use)
+     (compile-use pattern accessor (-> pattern meta :use))
+
+     (-> pattern meta :meta)
+     ; (and-pattern
+     ;   (compile-pattern (with-meta pattern (dissoc (meta pattern) :meta)) accessor)
+     (compile-pattern (:meta (meta pattern)) (comp meta accessor))
+
+     (map? pattern)
+     (compile-map pattern accessor)
+
+     (set? pattern)
+     (if (-> pattern meta :*)
+       (compile-set* pattern accessor)
+       (compile-set pattern accessor))
+
      (vector? pattern) (compile-vector pattern accessor)
+
      (seq? pattern) (compile-seq pattern accessor)
+
      (regex? pattern) (compile-regex pattern accessor)
+
      :else (compile-element pattern accessor))))
 
 (defn matches?
@@ -84,7 +153,7 @@
 
     (match f e) => (f e)
 
-  For v and e, both vectors:
+  For v and e, both vectors, each ordinal spot is checked:
 
     (match v e) => (and (= (count v) (count e)
                         (match v1 e1)
