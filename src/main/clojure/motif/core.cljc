@@ -112,6 +112,9 @@
    (compile-pattern pattern identity))
   ([pattern accessor]
    (cond
+     (-> pattern meta :*)
+     (compile-arity pattern accessor)
+
      (-> pattern meta :meta)
      (compile-meta pattern accessor)
 
@@ -120,9 +123,6 @@
 
      (-> pattern meta :use)
      (compile-use pattern accessor)
-
-     (-> pattern meta :*)
-     (compile-arity pattern accessor)
 
      (map? pattern)
      (compile-map pattern accessor)
