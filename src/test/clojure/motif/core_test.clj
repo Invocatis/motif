@@ -23,14 +23,13 @@
 (deftest test-vector
   (testing "Vectors"
     (is (matches? [pos? pos? neg?] [1 1 -1]))
-    (is (not (matches? [] [nil])))))
+    (is (matches? [1 2] [1 2 3]))
+    (is (not (matches? [1] [])))))
 
 (deftest test-set
   (testing "Sets"
     (is (matches? #{1 2} 1))
-    (is (matches? #{1 2} [1 2]))
-    (is (not (matches? #{1 2} 3)))
-    (is (not (matches? #{1 2} [1 2 3])))))
+    (is (not (matches? #{1 2} 3)))))
 
 (deftest test-seq
   (testing "Seqs"
