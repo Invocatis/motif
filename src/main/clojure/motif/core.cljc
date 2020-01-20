@@ -8,11 +8,22 @@
 
 (defn- strict?
   [pattern]
-  (-> pattern meta :!) )
+  (-> pattern meta :!))
+
+(defn- compile-meta
+  [pattern accessor]
+  (and-pattern
+    (compile-pattern (with-meta pattern (dissoc (meta pattern) :meta)) accessor)
+    (compile-pattern (:meta (meta pattern)) (comp meta accessor))))
+
+(defn- compile-arity
+  [pattern accessor]
+  (let [matcher (compile-pattern (with-meta pattern (dissoc (meta pattern) :*)))]
+    (fn [target] (every? matcher (accessor target)))))
 
 (defn- compile-use
-  [pattern accessor pred]
-  (fn [target] (pred pattern (accessor target))))
+  [pattern accessor]
+  (fn [target] ((:use (meta pattern)) pattern (accessor target))))
 
 (defn- compile-element
   [pattern accessor]
@@ -76,22 +87,6 @@
                   (comp #(nth % i nil) accessor)))
               pattern)))))))
 
-(defn compile-set*
-  [pattern accessor]
-  (let [subpatterns (map #(compile-pattern %) pattern)]
-    (if (strict? pattern)
-      (fn [target]
-        (let [sr (map (fn [t] (map (fn [sp] (sp t)) subpatterns)) target)]
-          (and
-            (every? (partial some identity) sr)
-            (every?
-              identity
-              (reduce
-                (fn [x y] (map #(or %1 %2) x y))
-                sr)))))
-      (fn [target]
-        (every? (apply some-fn subpatterns) (accessor target))))))
-
 (defn- compile-set
   [pattern accessor]
   (let [subpatterns (map #(compile-pattern % accessor) pattern)]
@@ -117,24 +112,23 @@
    (compile-pattern pattern identity))
   ([pattern accessor]
    (cond
+     (-> pattern meta :meta)
+     (compile-meta pattern accessor)
+
      (-> pattern meta :=)
      (compile-use pattern accessor =)
 
      (-> pattern meta :use)
-     (compile-use pattern accessor (-> pattern meta :use))
+     (compile-use pattern accessor)
 
-     (-> pattern meta :meta)
-     (and-pattern
-       (compile-pattern (with-meta pattern (dissoc (meta pattern) :meta)) accessor)
-       (compile-pattern (:meta (meta pattern)) (comp meta accessor)))
+     (-> pattern meta :*)
+     (compile-arity pattern accessor)
 
      (map? pattern)
      (compile-map pattern accessor)
 
      (set? pattern)
-     (if (-> pattern meta :*)
-       (compile-set* pattern accessor)
-       (compile-set pattern accessor))
+     (compile-set pattern accessor)
 
      (vector? pattern) (compile-vector pattern accessor)
 
