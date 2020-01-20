@@ -3,14 +3,21 @@
   <groupId>motif</groupId>
   <artifactId>motif</artifactId>
   <packaging>jar</packaging>
-  <version>0.1.0</version>
+  <version>0.1.1</version>
   <name>motif</name>
   <description>Recursive, data driven, pattern matching for Clojure</description>
   <url>https://github.com/invocatis/motif</url>
+  <licenses>
+    <license>
+      <name>GNU GENERAL PUBLIC LICENSE</name>
+      <url>https://www.gnu.org/licenses/gpl.txt</url>
+    </license>
+  </licenses>
   <scm>
-    <tag>00845b613ebb94464ab83d391772c25e3402b35d
-</tag>
-    <url/>
+    <url>https://github.com/invocatis/motif</url>
+    <connection>scm:git:git://github.com/invocatis/motif.git</connection>
+    <developerConnection>scm:git:ssh://git@github.com/invocatis/motif.git</developerConnection>
+    <tag>3554bd7d8ddabd82600b9267344737eb7a8e8c0d</tag>
   </scm>
   <build>
     <sourceDirectory>src/main/clojure</sourceDirectory>
@@ -42,7 +49,7 @@
     </repository>
     <repository>
       <id>clojars</id>
-      <url>https://clojars.org/repo/</url>
+      <url>https://repo.clojars.org/</url>
       <snapshots>
         <enabled>true</enabled>
       </snapshots>

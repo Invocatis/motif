@@ -4,4 +4,5 @@
 .gitignore
 .nrepl-port
 pom.xml.asc
+pom.xml
 .lein-repl-history
