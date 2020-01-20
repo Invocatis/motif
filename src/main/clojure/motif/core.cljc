@@ -140,38 +140,49 @@
 
 (defn matches?
   "Given a pattern, and an expression, recursively determines
-  if the expression matches the pattern. Patterns are described
-  as a DSL of clojure.core data structures as such:
+  if the expression matches the pattern.
 
   For f, a function, and x, any expression:
 
     (match f e) => (f e)
 
-  For v and e, both vectors, each ordinal spot is checked:
+  For vector patterns, each ordinal spot is checked:
 
-    (match v e) => (and (= (count v) (count e)
-                        (match v1 e1)
-                        (match v2 e2) ...
-                        (match vn en))
+    (matches? [p0 p1 p2] [t0 t1 t2]) =>
+        [t0 t1 t2 ...]
+          ↑  ↑  ↑      matches?
+        [p0 p1 p2 ...]
 
-  For s, an explicit sequence of any length (or infinite),
-    and e, a seqable collection of length n:
+    Vectors ensure their targets are at least as long as they are.
+    Strict vectors must have identical lengths.
 
-    (match s e) => (and (match s1 e1) (match s2 e2) ... (match sn en))
+  For lazy sequence patterns, like vectors, each oridnal spot is checked:
+
+    (matches? (p0 p1 p2) (t0 t1 t2)) =>
+        (t0 t1 t2 ...)
+          ↑  ↑  ↑      matches?
+        (p0 p1 p2 ...)
+
+    Lazy seqs targets can be shorter, or longer, than they are.
+    Infinite sequences can be used, though if they are matched against
+    inifinte targets, a infinte loop will happen
 
   For m, a map with keyset {k1,k2,...,kn}, and n, a map:
 
     (match m n) => (and (match (get m k1) (get n k1))
-                        (match (get m k2) (get n k2)) ...
-                        (match (get m kn) (get n kn))
+                        (match (get m k2) (get n k2))
+                        ...
 
-  Furthermore, simple logical operations are accomplished by
-  passing a vector of the desired operation, followed by a
-  the patterns to be applied. As such, use:
+    If the key is an ifn, it will be applied to the target instead.
+    Strict maps require that the pattern contains all keys of the target.
 
-    [:and p1 p2 ...]
-    [:or p1 p2 ...]
-    [:not p1]
+  Set patterns are disjunctive, and only require one of their elements to match.
+
+    (match m n) => (or (match m0 n)
+                       (match m1 n)
+                       ...
+
+    Strict set patterns require all elements to match, becoming conjunctive instead.
 
   For any pattern not described above, equality is checked.
 
@@ -179,6 +190,20 @@
 
   Given the expression passed matches the given pattern,
   true will be returned. Otherwise, false will be returned.
+
+
+  Meta tag modifers can enhance and change how each pattern functions.
+
+    ^:!
+      Strict modifier is defined for each pattern type
+    ^:=
+      Equality modifier forces equality to be used, rather than matches?
+    {^:use f}
+      Use mofider forces f to be used as predicate, rather than matches?
+    ^:*
+      Star modifier maps pattern over target, expecting all to match
+    {^:meta m}
+      Meta modifier matches m to the meta of the target
   "
   ([pattern]
    (compile-pattern pattern))
