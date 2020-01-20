@@ -124,9 +124,9 @@
      (compile-use pattern accessor (-> pattern meta :use))
 
      (-> pattern meta :meta)
-     ; (and-pattern
-     ;   (compile-pattern (with-meta pattern (dissoc (meta pattern) :meta)) accessor)
-     (compile-pattern (:meta (meta pattern)) (comp meta accessor))
+     (and-pattern
+       (compile-pattern (with-meta pattern (dissoc (meta pattern) :meta)) accessor)
+       (compile-pattern (:meta (meta pattern)) (comp meta accessor)))
 
      (map? pattern)
      (compile-map pattern accessor)
