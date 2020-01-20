@@ -2,6 +2,11 @@
 
 (declare compile-pattern)
 
+(defn _
+  [any]
+  "Any predicate, returns true on all inputs"
+  true)
+
 (defn- and-pattern
   [p1 p2]
   (fn [target] (and (p1 target) (p2 target))))
