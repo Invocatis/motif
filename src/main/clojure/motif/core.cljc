@@ -119,7 +119,7 @@
      (compile-meta pattern accessor)
 
      (-> pattern meta :=)
-     (compile-use pattern accessor =)
+     (compile-use (with-meta pattern (assoc (meta pattern) :use =)) accessor)
 
      (-> pattern meta :use)
      (compile-use pattern accessor)
