@@ -51,7 +51,7 @@
     (if (strict? pattern)
       (and-pattern
         (compile-simple-map pattern accessor)
-        (fn [target] (every? (partial contains? (accessor target)) (keys pattern))))
+        (fn [target] (every? (partial contains? pattern) (keys (accessor target)))))
       (compile-simple-map pattern accessor))))
 
 (defn- compile-simple-vector
