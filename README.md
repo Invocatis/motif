@@ -44,7 +44,7 @@ Functions as patterns are invoked on the given target. Monadic predicates are on
 
 (matches? inc 1) ;=> true
 
-(matches? (fn [x y]) 1) ;=> ArityException!
+(matches? (fn [x y]) 1) ;=> false, due to ArityException
 ```
 
 ### Regex patterns
