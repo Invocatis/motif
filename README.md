@@ -151,7 +151,7 @@ The Use modifier explicitly directs motif to use a different function than `matc
 
 ### Getter Modifier
 
-Exclusive to maps, this modifer allows you to implicitly define how you want map keys to be used to get their target values. In cases where you have a map with function keys, this may be useful to stop them from being applied to the map and instead be gotten with `get`.
+Exclusive to maps, this modifier explicitly defines how keys are used to access their values in maps. In cases where you have a map with function keys, this may be useful to stop them from being applied to the map and instead be gotten with `get`.
 
 ```clojure
 (matches? ^{:getter get} {pos? neg? neg? pos?} {pos? -2 neg? 2}) ;=> true
