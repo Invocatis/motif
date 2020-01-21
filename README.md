@@ -298,7 +298,14 @@ We've added a convenience function to the library. `_` is the same as `clojure.c
 ```
 
 ### Match Macro
-Included in `motif.core` is the`match` macro. `match` works the same as `(condp = x ...)`. Enjoy!
+Included in `motif.core` is the`match` macro. `match` works the same as `(condp = x ...)`.
+
+```clojure
+(match 1
+  neg? "negative"
+  zero? "zero"
+  pos? "positive") ;=> positive
+```
 
 ## That's it!
 
