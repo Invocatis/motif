@@ -38,14 +38,17 @@
 
 (defn- compile-simple-map
   [pattern accessor]
-  (reduce
-    every-pred
-    (map
-      (fn [[k v]]
-        (let [acc (if (ifn? k) k #(get % k))]
-          (compile-pattern v
-            (comp acc accessor))))
-      pattern)))
+  (let [getter (-> pattern meta :getter)]
+    (reduce
+      (if (-> pattern meta :|)
+        some-fn
+        every-pred)
+      (map
+        (fn [[k v]]
+          (let [acc (or (when getter #(getter % k)) (if (ifn? k) k #(get % k)))]
+            (compile-pattern v
+              (comp acc accessor))))
+        pattern))))
 
 (defn- compile-map
   [pattern accessor]
@@ -65,9 +68,10 @@
                       (fn [i p] (compile-pattern p (comp #(nth % i) accessor)))
                       pattern)]
     (fn [target]
+      (def sp subpatterns)
       (and
-        (<= (count pattern) (count target))
-        (every? #(% (accessor target)) subpatterns)))))
+        (<= (count pattern) (count (accessor target)))
+        (every? #(% target) subpatterns)))))
 
 (defn- compile-vector
   [pattern accessor]
@@ -95,9 +99,14 @@
 (defn- compile-set
   [pattern accessor]
   (let [subpatterns (map #(compile-pattern % accessor) pattern)]
-    (if (strict? pattern)
+    (cond
+      (strict? pattern)
+      (fn [target]
+        (= 1 (count (filter identity (map (fn [sp] (sp target)) subpatterns)))))
+      (-> pattern meta :&)
       (fn [target]
         (every? identity (map (fn [sp] (sp target)) subpatterns)))
+      :else
       (fn [target]
         (not (empty? (filter identity (map (fn [sp] (sp target)) subpatterns))))))))
 
@@ -112,7 +121,7 @@
   [any]
   (= (type any) regex-type))
 
-(defn- compile-pattern
+(defn compile-pattern
   ([pattern]
    (compile-pattern pattern identity))
   ([pattern accessor]
@@ -187,7 +196,7 @@
                        (match m1 n)
                        ...
 
-    Strict set patterns require all elements to match, becoming conjunctive instead.
+    Strict set patterns require exactly one element to match.
 
   For any pattern not described above, equality is checked.
 
@@ -211,9 +220,14 @@
       Meta modifier matches m to the meta of the target
   "
   ([pattern]
-   (compile-pattern pattern))
+   (fn [target]
+     (try
+       (apply (compile-pattern pattern) [target])
+       (catch Exception e false))))
   ([pattern expr]
-   (apply (compile-pattern pattern) [expr])))
+   (try
+     (apply (compile-pattern pattern) [expr])
+     (catch Exception e false))))
 
 (defmacro match
   "Takes a subject expression, and a set of clauses.

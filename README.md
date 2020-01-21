@@ -129,9 +129,9 @@ Modifiers extend and specify how each of patterns can work. Modifiers are attach
 The Equality modifier directs motif to compare values using the `=` function, rather than `matches?`. We can use this when motif's special interpretations might get in the way.
 
 ```clojure
-(matches? {println 1} {println 1}) ;=> false
+(matches? {identity 1} {identity 1}) ;=> false
 
-(matches? ^:= {println 1} {println 1}) ;=> true
+(matches? ^:= {identity 1} {identity 1}) ;=> true
 ```
 
 ### Use Modifier
@@ -142,6 +142,14 @@ The Use modifier explicitly directs motif to use a different function than `matc
 (matches? {:x 1 :y 2} {:x 3 :y 4}) ;=> false
 
 (matches? ^{:use #(= (set (keys %1)) (set (keys %2)))} {:x 1 :y 2} {:x 3 :y 4}) ;=> true
+```
+
+### Getter Modifier
+
+Exclusive to maps, this modifer allows you to implicitly define how you want map keys to be used to get their target values. In cases where you have a map with function keys, this may be useful to stop them from being applied to the map and instead be gotten with `get`.
+
+```clojure
+(matches? ^{:getter get} {pos? neg? neg? pos?} {pos? -2 neg? 2}) ;=> true
 ```
 
 ### Star Modifier
@@ -163,7 +171,7 @@ Since modifiers take up the information space of the structures metadata, the Me
 
 (matches? ^{:meta {:x 2}} {:y 1} ^{:x 1} {:y 1}) ;=> false
 
-(matches? ^{:meta {:x ^:* #{1 2}}} {:y 1} ^{:x 1} {:y 1}) ;=> true
+(matches? ^{:meta {:x ^:* #{1 2}}} {:y 1} ^{:x [1 2]} {:y 1}) ;=> true
 ```
 
 ### Strict Modifier
@@ -182,14 +190,12 @@ Strict maps require equality in keys.
 ```
 
 #### Strict Sets
-Strict sets are conjunctive, rather than disjunctive. That is, all elements must match the target, not just one. Or rather, it means they serve as logical `and` vs logical `or`.
+Sets require at least one element to match the target. Strict sets strengthen this requirement to require one and only one element to match the target.
 
 ```clojure
-(matches? #{1 2} 1) ;=> true
+(matches? #{1 pos?} 1) ;=> true
 
-(matches? ^:! #{1 2} 1) ;=> false
-
-(matches? ^:! #{pos? even?} [2 4 6 8]) ;=> true
+(matches? ^:! #{1 pos?} 1) ;=> false
 ```
 
 #### Strict Vectors
@@ -201,14 +207,41 @@ Strict Vectors require the length of their targets be the same as their own leng
 (matches? ^:! [1 2 3] [1 2 3 4]) ;=> false
 ```
 
+## Logical Implementations
+
+It is worth noting the implicit ability to create logical patterns using our given tools. Maps require all pattern elements to match, a natural implementation of `and`. Sets require only one pattern to match, being an implementation of `or`. Finally, strict sets require one and only one element match the pattern, a perfect representation of `xor`. Here's a few examples:
+
+```clojure
+; Or
+(matches? #{integer? pos? odd?} -2) ;=> true
+
+; And
+(matches? {integer? true pos? true even? true} 2) ;=> true
+
+; Xor
+(matches? ^:! #{pos? neg?} 1) ;=> true
+(matches? ^:! #{pos? neg?} 0) ;=> false
+(matches? ^:1 #{pos? odd?} 1) ;=> false
+```
+
+Here we find ourselves with a slight discomfort: It can increase tedium and decrease legibility to write `true` as a value for simple `and` maps. Similarly, `or` as sets has less robustness since only boolean values can be compared. To fix this, we have additional modifiers `^:&` and `^:|` to imply conjunctive/disjunctive natures, respectively.
+
+```clojure
+; or map
+(matches? ^:| {:x 1 :y 2} {:x 1 :y 3}) ;=> true
+
+; and set
+(matches? ^:& #{pos? even?} -2) ;=> false
+```
+
 ## Some things to note
 
 ### Non-symmetry
 matches? is not symmetric! That is (matches? a b) does not imply (matches? b a). This is due to patterns being treated differently that their targets. Consider the following:
 ```clojure
-(matches {:x 1 nil? false} {:x 1}) ;=> true
+(matches {:x 1 nil? true} {:x 1}) ;=> false
 
-(matches {:x 1} {:x 1 nil? false}) ;=> false
+(matches {:x 1} {:x 1 nil? true}) ;=> true
 ```
 
 This dissymmetry is due to how various structures are interpreted when they are used as patterns.
@@ -220,6 +253,24 @@ Any exceptions thrown my the patterns, or motif itself, are treated as general f
 ```clojure
 (matches? #(throw (Exception. "Some Exception")) nil) ;=> Exception Some Exception
 ```
+
+However, be aware that exceptions will be thrown during the pattern compilation step; so if there's something wrong with your pattern, it will be represented as an exception.
+
+### Ordering of Patterns
+
+In most instances, clojure implements sets and maps using hashing, which does not guarantee ordering. There may arise some cases where you want one element of a pattern to be executed before another. In these cases one should remember the use of `array-map` and, though not included in core, `ordered-set`.
+
+### Modifier Tag Precedence
+
+As some modifiers completely change the course of interpretation, there is an implicit precedence in which some tags nullify others.
+
+The `^:use` and `^:=` tags void all other tags, as the `matches?` semantics are disregarded.
+
+Strictness in sets `^:!` supersedes conjuction `^:&`.
+
+Strictness in maps `^:!` does not interfere with disjunction `^:|`, though will result in strange effects. It is likely these effects are not desired, so avoid using both.
+
+Meta `^:meta` and star `^:*` tags play nicely with others.
 
 ## That's it!
 
@@ -236,11 +287,15 @@ That's all you need to go out into the world. But before you go, let's look at s
 
 (matches? {(partial reduce max) 4} [1 2 3 4]) ;=> true
 
-(matches? #{{inc 1} {dec 1}} 2) ;=> true
-
 (matches? (complement #{1 2 3}) 4) ;=> true
 
-(matches? (repeat odd?) [1 1 1 1 1 1]) ;=> true
+(matches? {:x nil keys ^:* #{:x}} {:x nil}) ;=> true
 
-(matches? {(juxt inc dec even?) [2 0 false]} 1) ;=> true
+(matches? {:x nil keys ^:* #{:x}} {:x nil :y nil}) ;=> false
+
+(matches? ^:* ^:! {:x pos?} [{:x 1} {:x 2} {:x 3} {:x 4}]) ;=> true
+
+(matches? ^{:meta {(comp set keys) ^:= #{:x :y}}} {:a pos?} ^{:x 1 :y 2} {:a 1}) ;=> true
+
+(matches? ^{:use clojure.set/subset?} #{1 2 3} #{1 2 3 4}) ;=> true
 ```
