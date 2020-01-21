@@ -23,7 +23,11 @@
 
 (defn- compile-arity
   [pattern accessor]
-  (let [matcher (compile-pattern (with-meta pattern (dissoc (meta pattern) :*)))]
+  (let [{star-value :*} (meta pattern)
+        meta (if (and (number? star-value) (> star-value 0))
+               (update (meta pattern) :* dec)
+               (dissoc (meta pattern) :*))
+        matcher (compile-pattern (with-meta pattern meta))]
     (fn [target] (every? matcher (accessor target)))))
 
 (defn- compile-use
