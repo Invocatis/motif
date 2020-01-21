@@ -297,6 +297,9 @@ We've added a convenience function to the library. `_` is the same as `clojure.c
 (matches? {:x _} {:x {:y 1}}) ;=> true
 ```
 
+### Match Macro
+Included in `motif.core` is the`match` macro. `match` works the same as `(condp = x ...)`. Enjoy!
+
 ## That's it!
 
 That's all you need to go out into the world. But before you go, let's look at some fun examples that might help illuminate some of the possibilities:
