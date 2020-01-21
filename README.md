@@ -122,7 +122,7 @@ Sets are our disjunctive patterns; they need only one of their elements match ag
 
 ## Modifiers
 
-Modifiers extend and specify how each of patterns can work. Modifiers are attached to their patterns as metadata values.
+Modifiers extend, specify, and hack how the patterns work. Modifiers are attached to their patterns as metadata values.
 
 ### Equality Modifier
 
