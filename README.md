@@ -86,7 +86,7 @@ Seq patterns work similarly to vector patterns, however, they can be longer or s
 (matches? (repeat odd?) (repeat 1)) ;=> infinite loop!
 ```
 ### Map patterns
-Maps compare corresponding key values with `matches?` Maps a conjunctive, and thus all keys much match positively. Extra keys in the target map are acceptable, and ignored by the pattern. Keys are not required to be present neither, though if they are not they're corresponding patterns must match against `nil`.
+Maps compare corresponding key values with `matches?` Maps a conjunctive, and thus all keys much match positively. Extra keys in the target map are acceptable, and ignored by the pattern. Keys are not required to be present, though if they are not they're corresponding patterns must match against `nil`.
 
 ```clojure
 (matches? {:key :pattern-value} {:key :target-value}) ;== (matches? :pattern-value :target-value)
