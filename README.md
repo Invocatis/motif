@@ -100,7 +100,7 @@ Maps compare corresponding key values with `matches?` Maps a conjunctive, and th
 (matches? {:key1 :value :key2 nil} {:key1 :value :key2 nil}) ;=> true
 ```
 
-If a key in the pattern is an IFn, it is instead applied to the target as apposed to gotten with `get`; this opens up another dimension of expressiveness using maps.
+If a key in the pattern is an function (`ifn?`), it is instead applied to the target as apposed to gotten with `get`; this opens up another dimension of expressiveness using maps.
 
 ```clojure
 (matches? {:key 1 #(count (keys %)) 1} {:key 1}) ;=> true
