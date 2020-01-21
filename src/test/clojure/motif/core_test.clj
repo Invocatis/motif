@@ -177,4 +177,5 @@
     (is (matches? ^{:getter (fn [target key] (inc key))} {0 1 1 2 2 3} {}))
     (is (matches? _ 1))
     (is (matches? _ nil))
-    (is (matches? {:x _} {:x {:y 1}}))))
+    (is (matches? {:x _} {:x {:y 1}}))
+    (is (= (match 1 neg? "negative" zero? "zero" pos? "positive") "positive"))))
