@@ -21,7 +21,7 @@
     (compile-pattern (with-meta pattern (dissoc (meta pattern) :meta)) accessor)
     (compile-pattern (:meta (meta pattern)) (comp meta accessor))))
 
-(defn- compile-arity
+(defn- compile-star
   [pattern accessor]
   (let [{star-value :*} (meta pattern)
         meta (if (and (number? star-value) (> star-value 0))
@@ -131,7 +131,7 @@
   ([pattern accessor]
    (cond
      (-> pattern meta :*)
-     (compile-arity pattern accessor)
+     (compile-star pattern accessor)
 
      (-> pattern meta :meta)
      (compile-meta pattern accessor)
