@@ -159,12 +159,18 @@ Exclusive to maps, this modifier explicitly defines how keys are used to access 
 
 ### Star Modifier
 
-The Star modifier maps the pattern over the target, requiring all elements to match.
+The Star modifier maps the pattern over the target, requiring all elements to match. More specifically, the target is seq'd, and each element is matched against the pattern. If every element matches, the pattern matches.
 
 ```clojure
 (matches? #{1 2} [1 2]) ;=> false
 
 (matches? ^:* #{1 2} [1 2]) ;=> true
+```
+
+Additionally, a positive integral value can be passed to the star modifier. The number will define how many extra times motif should seq targets before matching against the pattern. The default value is `0`, and thus only does one seq.
+
+```clojure
+(matches? ^{:* 1} (fn [n] (integer? n)) [[1 2] [3 4] [5 6]]) ;=> true
 ```
 
 ### Meta Modifier
@@ -276,6 +282,10 @@ Strictness in sets `^:!` supersedes conjuction `^:&`.
 Strictness in maps `^:!` does not interfere with disjunction `^:|`, though will result in strange effects. It is likely these effects are not desired, so avoid using both.
 
 Meta `^:meta` and star `^:*` tags play nicely with others.
+
+### Modifiers on Functions
+
+For reasons known only to the compiler, meta tags are not picked up when applied to functions stored in vars. However, there are many reasons one might want to apply our modifiers to functions as well. To accomplish this, one can either use meta tags on function literatls of the form `(fn [...] ...)`, or one can use the `with-meta` function.
 
 ## That's it!
 

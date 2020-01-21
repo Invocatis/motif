@@ -126,6 +126,7 @@
     (is (not (matches? #{1 2} [1 2])))
 
     (is (matches? ^:* #{1 2} [1 2]))
+    (matches? ^{:* 1} (fn [n] (integer? n)) [[1 2] [3 4] [5 6]])
     (is (matches? {:y 1} ^{:x 1} {:y 1}))
 
     (is (not (matches? ^{:meta {:x 2}} {:y 1} ^{:x 1} {:y 1})))
@@ -172,5 +173,5 @@
     (is (matches? (repeat odd?) [1 1 1 1 1 1]))
 
     (is (matches? {(juxt inc dec even?) [2 0 false]} 1))
-    
+
     (matches? ^{:getter (fn [target key] (inc key))} {0 1 1 2 2 3} {})))
