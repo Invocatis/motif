@@ -174,4 +174,7 @@
 
     (is (matches? {(juxt inc dec even?) [2 0 false]} 1))
 
-    (matches? ^{:getter (fn [target key] (inc key))} {0 1 1 2 2 3} {})))
+    (is (matches? ^{:getter (fn [target key] (inc key))} {0 1 1 2 2 3} {}))
+    (is (matches? _ 1))
+    (is (matches? _ nil))
+    (is (matches? {:x _} {:x {:y 1}}))))

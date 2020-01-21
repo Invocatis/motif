@@ -287,6 +287,16 @@ Meta `^:meta` and star `^:*` tags play nicely with others.
 
 For reasons known only to the compiler, meta tags are not picked up when applied to functions stored in vars. However, there are many reasons one might want to apply our modifiers to functions as well. To accomplish this, one can either use meta tags on function literatls of the form `(fn [...] ...)`, or one can use the `with-meta` function.
 
+### Any Function
+We've added a convenience function to the library. `_` is the same as `clojure.core/any?`, but has a more idiomatic feel to it.
+
+```clojure
+(require '[motif.core :refer [_ matches?]])
+(matches? _ 1) ;=> true
+(matches? _ nil) ;=> true
+(matches? {:x _} {:x {:y 1}}) ;=> true
+```
+
 ## That's it!
 
 That's all you need to go out into the world. But before you go, let's look at some fun examples that might help illuminate some of the possibilities:
