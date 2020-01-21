@@ -298,4 +298,6 @@ That's all you need to go out into the world. But before you go, let's look at s
 (matches? ^{:meta {(comp set keys) ^:= #{:x :y}}} {:a pos?} ^{:x 1 :y 2} {:a 1}) ;=> true
 
 (matches? ^{:use clojure.set/subset?} #{1 2 3} #{1 2 3 4}) ;=> true
+
+(matches? ^{:getter (fn [target key] (inc key))} {0 1 1 2 2 3} {})
 ```

@@ -120,7 +120,7 @@
     (is (not (matches? {:x 1 :y 2} {:x 3 :y 4})))
 
     (is (matches? ^{:use #(= (set (keys %1)) (set (keys %2)))} {:x 1 :y 2} {:x 3 :y 4}))
-    
+
     (matches? ^{:getter get} {pos? neg? neg? pos?} {pos? -2 neg? 2})
 
     (is (not (matches? #{1 2} [1 2])))
@@ -171,4 +171,6 @@
 
     (is (matches? (repeat odd?) [1 1 1 1 1 1]))
 
-    (is (matches? {(juxt inc dec even?) [2 0 false]} 1))))
+    (is (matches? {(juxt inc dec even?) [2 0 false]} 1))
+    
+    (matches? ^{:getter (fn [target key] (inc key))} {0 1 1 2 2 3} {})))
