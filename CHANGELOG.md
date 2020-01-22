@@ -21,3 +21,7 @@ Security in case of vulnerabilities.
 ### Changed
 - Moved set seqing to star modifier, now always uses disjunction
 - Vectors no longer require equal sized, moved to strict vectors
+
+## 1.0.1
+### Fixed
+- Added reader tag for clojurescript exception handling
