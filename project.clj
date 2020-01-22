@@ -15,4 +15,20 @@
   :profiles
     {:uberjar {:aot :all}
      :dev {:dependencies [[org.clojure/tools.namespace "0.3.0-alpha4"]
-                          [criterium "0.4.4"]]}})
+                          [criterium "0.4.4"]]
+           :plugins [[lein-doo "0.1.10"]]}}
+
+  :doo
+    {:build "test"
+     :alias {:default [:node]}}
+
+  :cljsbuild
+    {:builds
+     [{:id           "test"
+       :source-paths ["src/main/clojure" "src/test/clojure" "src/test/cljs"]
+       :compiler     {:main          motif.runner
+                      :output-to     "target/doo/test.js"
+                      :output-dir    "target/doo/out"
+                      :target        :nodejs
+                      :language-in   :ecmascript5
+                      :optimizations :none}}]})
