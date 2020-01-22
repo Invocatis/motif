@@ -227,11 +227,11 @@
    (fn [target]
      (try
        (apply (compile-pattern pattern) [target])
-       (catch Exception e false))))
+       (catch #?(:clj Exception :cljs :default) _ false))))
   ([pattern expr]
    (try
      (apply (compile-pattern pattern) [expr])
-     (catch Exception e false))))
+     (catch #?(:clj Exception :cljs :default) _ false))))
 
 (defmacro match
   "Takes a subject expression, and a set of clauses.
