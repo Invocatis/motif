@@ -5,13 +5,13 @@ Recursive, data driven, pattern matching for Clojure
 ## Releases and dependency information
 
 ```
-[motif "1.0.0"]
+[motif "1.0.1"]
 ```
 ```
 <dependency>
   <groupId>motif</groupId>
   <artifactId>motif</artifactId>
-  <version>1.0.0</version>
+  <version>1.0.1</version>
 </dependency>
 ```
 ## Overview
