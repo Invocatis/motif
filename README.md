@@ -4,6 +4,8 @@ Recursive, data driven, pattern matching for Clojure
 
 ## Releases and dependency information
 
+[![CircleCI](https://circleci.com/gh/Invocatis/motif/tree/master.svg?style=svg)](https://circleci.com/gh/Invocatis/motif/tree/master)
+
 ```
 [motif "1.0.1"]
 ```
