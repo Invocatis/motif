@@ -141,14 +141,14 @@ The Equality modifier directs motif to compare values using the `=` function, ra
 The Use modifier explicitly directs motif to use a different function than `matches?`. The Equality modifier is a special case of the use modifier.
 
 ```clojure
-(defn same-keys
+(defn same-keys?
   [m0 m1]
   (= (set (keys m0))
      (set (keys m1))))
 
 (matches? {:x 1 :y 2} {:x 3 :y 4}) ;=> false
 
-(matches? ^{:use same-keys} {:x 1 :y 2} {:x 3 :y 4}) ;=> true
+(matches? ^{:use same-keys?} {:x 1 :y 2} {:x 3 :y 4}) ;=> true
 ```
 
 ### Getter Modifier
