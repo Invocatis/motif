@@ -261,10 +261,10 @@ This dissymmetry is due to how various structures are interpreted when they are 
 
 ### Exceptions are failures
 
-Any exceptions thrown my the patterns, or motif itself, are treated as general failures, and simply cause `matches?` to return `false`
+Any exceptions thrown by patterns are treated as general failures, causing motif to return false.
 
 ```clojure
-(matches? #(throw (Exception. "Some Exception")) nil) ;=> Exception Some Exception
+(matches? #(throw (Exception. "Some Exception")) nil) ;=> false
 ```
 
 However, be aware that exceptions will be thrown during the pattern compilation step; so if there's something wrong with your pattern, it will be represented as an exception.
@@ -285,9 +285,11 @@ Strictness in maps `^:!` does not interfere with disjunction `^:|`, though will 
 
 Meta `^:meta` and star `^:*` tags play nicely with others.
 
-### Modifiers on Functions
+### Meta Info and Compiler Nuances
 
-For reasons known only to the compiler, meta tags are not picked up when applied to functions stored in vars. However, there are many reasons one might want to apply our modifiers to functions as well. To accomplish this, one can either use meta tags on function literatls of the form `(fn [...] ...)`, or one can use the `with-meta` function.
+Due to how the compiler has been implemented, meta macros are not picked up when applied to symbols refering to vars (`(meta ^:x meta) ;=> nil`). When modifiers are needed on variable values, remember the `with-meta` function (`(meta (with-meta meta {:x true})) ;=> {:x true}`. This also applies to function application results (`(with-meta (identity inc) {:x 1})`).
+
+Function literals, however, pick up meta macros just fine. Consider wrapping your function in a literal: `(matches? ^:* (fn [x] (integer? x)) [[1 2 3] [4 5 6] [7 8 9]])`.
 
 ### Any Function
 We've added a convenience function to the library. `_` is the same as `clojure.core/any?`, but has a more idiomatic feel to it.
