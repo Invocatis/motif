@@ -13,7 +13,7 @@ Recursive, data driven, pattern matching for Clojure
 <dependency>
   <groupId>motif</groupId>
   <artifactId>motif</artifactId>
-  <version>1.0.1\</version>
+  <version>1.0.1</version>
 </dependency>
 ```
 ## Overview
