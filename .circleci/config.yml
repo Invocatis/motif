@@ -42,4 +42,4 @@ jobs:
       - run: lein test
 
       # run ClojureScript tests!
-      - run: lein doo test
+      - run: lein doo once
