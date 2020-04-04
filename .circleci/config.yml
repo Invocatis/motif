@@ -31,12 +31,15 @@ jobs:
             # fallback to using the latest cache if no exact match is found
             - v1-dependencies-
 
-      - run: lein deps
+      - run: lein with-profile +dev deps
 
       - save_cache:
           paths:
             - ~/.m2
           key: v1-dependencies-{{ checksum "project.clj" }}
 
-      # run tests!
+      # run Clojure tests!
       - run: lein test
+
+      # run ClojureScript tests!
+      - run: lein doo test
