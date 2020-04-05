@@ -3,8 +3,8 @@
 (declare compile-pattern)
 
 (defn _
-  [any]
   "Any predicate, returns true on all inputs"
+  [_any]
   true)
 
 (defn- and-pattern
@@ -59,7 +59,7 @@
   (if (empty? pattern)
     (if (strict? pattern)
       (fn [target] (empty? (accessor target)))
-      (fn [target] true))
+      (fn [_target] true))
     (if (strict? pattern)
       (and-pattern
         (compile-simple-map pattern accessor)
@@ -72,7 +72,6 @@
                       (fn [i p] (compile-pattern p (comp #(nth % i) accessor)))
                       pattern)]
     (fn [target]
-      (def sp subpatterns)
       (and
         (<= (count pattern) (count (accessor target)))
         (every? #(% target) subpatterns)))))
@@ -112,7 +111,7 @@
         (every? identity (map (fn [sp] (sp target)) subpatterns)))
       :else
       (fn [target]
-        (not (empty? (filter identity (map (fn [sp] (sp target)) subpatterns))))))))
+        (seq (filter identity (map (fn [sp] (sp target)) subpatterns)))))))
 
 (defn- compile-regex
   [pattern accessor]
@@ -245,9 +244,9 @@
   and its value will be returned if no clause matches. If no
   default expression is provided, and no clause matches, nil will
   be returned"
-  ([expr]
+  ([_expr]
    nil)
-  ([expr default]
+  ([_expr default]
    `~default)
   ([expr pattern result & statements]
    `(if (matches? ~pattern ~expr)

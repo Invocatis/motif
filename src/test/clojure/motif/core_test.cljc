@@ -95,7 +95,7 @@
     (t/is (not (motif/matches? 1 2)))
     (t/is (motif/matches? pos? 1))
     (t/is (motif/matches? inc 1))
-    (t/is (not (motif/matches? (fn [x y]) 1)))
+    (t/is (not (motif/matches? (fn [_x _y]) 1)))
     (t/is (motif/matches? #"\d*" "123"))
     (t/is (motif/matches? #"\d*" "123"))
     (t/is (motif/matches? #"\[(\d*\s)*\d*\]" [1 2 3]))
@@ -176,7 +176,7 @@
 
     (t/is (motif/matches? {(juxt inc dec even?) [2 0 false]} 1))
 
-    (t/is (motif/matches? ^{:getter (fn [target key] (inc key))} {0 1 1 2 2 3} {}))
+    (t/is (motif/matches? ^{:getter (fn [_target key] (inc key))} {0 1 1 2 2 3} {}))
     (t/is (motif/matches? motif/_ 1))
     (t/is (motif/matches? motif/_ nil))
     (t/is (motif/matches? {:x motif/_} {:x {:y 1}}))
