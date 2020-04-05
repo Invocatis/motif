@@ -7,17 +7,13 @@
   [_any]
   true)
 
-(defn- and-pattern
-  [p1 p2]
-  (fn [target] (and (p1 target) (p2 target))))
-
 (defn- strict?
   [pattern]
   (-> pattern meta :!))
 
 (defn- compile-meta
   [pattern accessor]
-  (and-pattern
+  (every-pred
     (compile-pattern (with-meta pattern (dissoc (meta pattern) :meta)) accessor)
     (compile-pattern (:meta (meta pattern)) (comp meta accessor))))
 
@@ -61,7 +57,7 @@
       (fn [target] (empty? (accessor target)))
       (fn [_target] true))
     (if (strict? pattern)
-      (and-pattern
+      (every-pred
         (compile-simple-map pattern accessor)
         (fn [target] (every? (partial contains? pattern) (keys (accessor target)))))
       (compile-simple-map pattern accessor))))
@@ -79,7 +75,7 @@
 (defn- compile-vector
   [pattern accessor]
   (if (strict? pattern)
-    (and-pattern
+    (every-pred
       (fn [target] (= (count pattern) (count (accessor target))))
       (compile-simple-vector pattern accessor))
     (compile-simple-vector pattern accessor)))
