@@ -61,7 +61,7 @@ Regex patterns are compared to the string representations of their targets as wi
 ```
 
 ### Vector patterns
-Vectors compare each element oridnally, that is the first element of the pattern is compared to the first of the target, the second to the second, and so on. Vectors require their targets to be at least as long as their patterns, but the targets can be longer than the patterns.
+Vectors compare each element ordinally, that is the first element of the pattern is compared to the first of the target, the second to the second, and so on. Vectors require their targets to be at least as long as their patterns, but the targets can be longer than the patterns.
 
 ```clojure
 (matches? [1 2] [1 2]) ;=> true
@@ -257,7 +257,7 @@ matches? is not symmetric! That is (matches? a b) does not imply (matches? b a).
 (matches {:x 1} {:x 1 nil? true}) ;=> true
 ```
 
-This dissymmetry is due to how various structures are interpreted when they are used as patterns.
+This asymmetry is due to how various structures are interpreted when they are used as patterns.
 
 ### Exceptions are failures
 
@@ -279,7 +279,7 @@ As some modifiers completely change the course of interpretation, there is an im
 
 The `^:use` and `^:=` tags void all other tags, as the `matches?` semantics are disregarded.
 
-Strictness in sets `^:!` supersedes conjuction `^:&`.
+Strictness in sets `^:!` supersedes conjunction `^:&`.
 
 Strictness in maps `^:!` does not interfere with disjunction `^:|`, though will result in strange effects. It is likely these effects are not desired, so avoid using both.
 
@@ -287,7 +287,7 @@ Meta `^:meta` and star `^:*` tags play nicely with others.
 
 ### Meta Info and Compiler Nuances
 
-Due to how the compiler has been implemented, meta macros are not picked up when applied to symbols refering to vars (`(meta ^:x meta) ;=> nil`). When modifiers are needed on variable values, remember the `with-meta` function (`(meta (with-meta meta {:x true})) ;=> {:x true}`. This also applies to function application results (`(with-meta (identity inc) {:x 1})`).
+Due to how the compiler has been implemented, meta macros are not picked up when applied to symbols referring to vars (`(meta ^:x meta) ;=> nil`). When modifiers are needed on variable values, remember the `with-meta` function (`(meta (with-meta meta {:x true})) ;=> {:x true}`. This also applies to function application results (`(with-meta (identity inc) {:x 1})`).
 
 Function literals, however, pick up meta macros just fine. Consider wrapping your function in a literal: `(matches? ^:* (fn [x] (integer? x)) [[1 2 3] [4 5 6] [7 8 9]])`.
 
