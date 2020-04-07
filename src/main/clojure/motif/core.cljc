@@ -169,7 +169,7 @@
     Vectors ensure their targets are at least as long as they are.
     Strict vectors must have identical lengths.
 
-  For lazy sequence patterns, like vectors, each oridnal spot is checked:
+  For lazy sequence patterns, like vectors, each ordinal spot is checked:
 
     (matches? (p0 p1 p2) (t0 t1 t2)) =>
         (t0 t1 t2 ...)
@@ -178,7 +178,7 @@
 
     Lazy seqs targets can be shorter, or longer, than they are.
     Infinite sequences can be used, though if they are matched against
-    inifinte targets, a infinte loop will happen
+    infinite targets, a infinite loop will happen
 
   For m, a map with keyset {k1,k2,...,kn}, and n, a map:
 
@@ -205,14 +205,14 @@
   true will be returned. Otherwise, false will be returned.
 
 
-  Meta tag modifers can enhance and change how each pattern functions.
+  Meta tag modifiers can enhance and change how each pattern functions.
 
     ^:!
       Strict modifier is defined for each pattern type
     ^:=
       Equality modifier forces equality to be used, rather than matches?
     {^:use f}
-      Use mofider forces f to be used as predicate, rather than matches?
+      Use modifier forces f to be used as predicate, rather than matches?
     ^:*
       Star modifier maps pattern over target, expecting all to match
     {^:meta m}
