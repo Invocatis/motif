@@ -4,6 +4,8 @@ Recursive, data driven, pattern matching for Clojure
 
 ## Releases and dependency information
 
+[![CircleCI](https://circleci.com/gh/Invocatis/motif/tree/master.svg?style=svg)](https://circleci.com/gh/Invocatis/motif/tree/master)
+
 ```
 [motif "1.0.1"]
 ```
@@ -11,7 +13,11 @@ Recursive, data driven, pattern matching for Clojure
 <dependency>
   <groupId>motif</groupId>
   <artifactId>motif</artifactId>
+<<<<<<< HEAD
   <version>1.0.1</version>
+=======
+  <version>1.0.1\</version>
+>>>>>>> master
 </dependency>
 ```
 ## Overview
