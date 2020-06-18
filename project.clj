@@ -1,4 +1,4 @@
-(defproject motif "1.0.1"
+(defproject motif "1.1.1-SNAPSHOT"
   :description "Recursive, data driven, pattern matching for Clojure"
   :url "https://github.com/invocatis/motif"
 

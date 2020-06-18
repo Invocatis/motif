@@ -30,6 +30,23 @@
         matcher (compile-pattern (with-meta pattern meta))]
     (fn [target] (every? matcher (accessor target)))))
 
+(defn- compile-question
+  [pattern accessor]
+  (let [{?value :?} (meta pattern)
+        ?value (if (boolean? ?value) 1 ?value)
+        ?value (if (number? ?value) #(>= % ?value) ?value)
+        meta (dissoc (meta pattern) :?)
+        matcher (compile-pattern (with-meta pattern meta) accessor)]
+    (fn [target] (apply ?value [(count (filter matcher (accessor target)))]))))
+
+(defn- compile-strict-question
+  [pattern accessor]
+  (let [{?value :!?} (meta pattern)
+        ?value (if (boolean? ?value) 1 ?value)
+        meta (dissoc (meta pattern) :!?)
+        matcher (compile-pattern (with-meta pattern meta) accessor)]
+    (fn [target] (apply #(= % ?value) [(count (filter matcher (accessor target)))]))))
+
 (defn- compile-use
   [pattern accessor]
   (fn [target] ((:use (meta pattern)) pattern (accessor target))))
@@ -66,25 +83,6 @@
         (fn [target] (every? (partial contains? pattern) (keys (accessor target)))))
       (compile-simple-map pattern accessor))))
 
-(defn- compile-simple-vector
-  [pattern accessor]
-  (let [subpatterns (map-indexed
-                      (fn [i p] (compile-pattern p (comp #(nth % i) accessor)))
-                      pattern)]
-    (fn [target]
-      (def sp subpatterns)
-      (and
-        (<= (count pattern) (count (accessor target)))
-        (every? #(% target) subpatterns)))))
-
-(defn- compile-vector
-  [pattern accessor]
-  (if (strict? pattern)
-    (and-pattern
-      (fn [target] (= (count pattern) (count (accessor target))))
-      (compile-simple-vector pattern accessor))
-    (compile-simple-vector pattern accessor)))
-
 (defn- compile-seq
   [pattern accessor]
   (fn [value]
@@ -114,6 +112,30 @@
       (fn [target]
         (not (empty? (filter identity (map (fn [sp] (sp target)) subpatterns))))))))
 
+(defn- compile-simple-vector
+  [pattern accessor]
+  (let [subpatterns (map-indexed
+                      (fn [i p] (compile-pattern p (comp #(nth % i) accessor)))
+                      pattern)]
+    (fn [target]
+      (and
+        (<= (count pattern) (count (accessor target)))
+        (every? #(% target) subpatterns)))))
+
+(defn- compile-vector
+  [pattern accessor]
+  (cond
+    (strict? pattern)
+    (and-pattern
+      (fn [target] (= (count pattern) (count (accessor target))))
+      (compile-simple-vector pattern accessor))
+
+    (or (-> pattern meta :|) (-> pattern meta :&))
+    (compile-set pattern accessor)
+
+    :else
+    (compile-simple-vector pattern accessor)))
+
 (defn- compile-regex
   [pattern accessor]
   (fn [value]
@@ -132,6 +154,9 @@
    (cond
      (-> pattern meta :*)
      (compile-star pattern accessor)
+
+     (-> pattern meta :?)
+     (compile-question pattern accessor)
 
      (-> pattern meta :meta)
      (compile-meta pattern accessor)
