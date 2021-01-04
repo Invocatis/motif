@@ -10,6 +10,9 @@ Recursive, data driven, pattern matching for Clojure
 [motif "1.0.1"]
 ```
 ```
+motif/motif {:mvn/version "1.0.1"}
+```
+```
 <dependency>
   <groupId>motif</groupId>
   <artifactId>motif</artifactId>
