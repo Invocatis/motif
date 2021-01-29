@@ -80,14 +80,14 @@
     (t/is (motif/matches? ^:! ^:* #{pos? odd?} [2 4 6 8]))
     (t/is (not (motif/matches? ^:! ^:* #{pos? even?} [2 4 6 9])))))
 
-(t/deftest match-macro
-  (t/testing "Match Macro"
-    (t/is
-      (motif/match "Hello"
-        1 "Not this one"
-        [1 2 3] "Or this one"
-        #{1 2 3} "Not at all"
-        #"Hello" true))))
+; (t/deftest match-macro
+;   (t/testing "Match Macro"
+;     (t/is
+;       (motif/match "Hello"
+;         1 "Not this one"
+;         [1 2 3] "Or this one"
+;         #{1 2 3} "Not at all"
+;         #"Hello" true))))
 
 (t/deftest readme-examples
   (t/testing "Readme Examples"
@@ -180,4 +180,4 @@
     (t/is (motif/matches? motif/_ 1))
     (t/is (motif/matches? motif/_ nil))
     (t/is (motif/matches? {:x motif/_} {:x {:y 1}}))
-    (t/is (= (motif/match 1 neg? "negative" zero? "zero" pos? "positive") "positive"))))
+    #_(t/is (= (motif/match 1 neg? "negative" zero? "zero" pos? "positive") "positive"))))

@@ -1,250 +1,204 @@
-(ns motif.core)
+(ns motif.core
+  (:require
+   [motif.interpreter :refer [interpret]]))
 
-(declare compile-pattern)
+(defprotocol IMatchable
+  (compile-matcher [pattern target context]))
 
-(defn _
-  "Any predicate, returns true on all inputs"
-  [_any]
-  true)
+(defprotocol IContinuable
+  (continue [pattern target]))
 
-(defn- strict?
-  [pattern]
-  (-> pattern meta :!))
+(defprotocol IStrictModifier
+  (strictly [pattern target context]))
 
-(defn- compile-meta
-  [pattern accessor]
-  (every-pred
-    (compile-pattern (with-meta pattern (dissoc (meta pattern) :meta)) accessor)
-    (compile-pattern (:meta (meta pattern)) (comp meta accessor))))
+(defprotocol IConjunctiveModifier
+  (conjunctively [pattern target context]))
 
-(defn- compile-star
-  [pattern accessor]
-  (let [{star-value :*} (meta pattern)
-        meta (if (and (number? star-value) (> star-value 0))
-               (update (meta pattern) :* dec)
-               (dissoc (meta pattern) :*))
-        matcher (compile-pattern (with-meta pattern meta))]
-    (fn [target] (every? matcher (accessor target)))))
+(defprotocol IDisjunctiveModifier
+  (disjunctively [pattern target context]))
 
-(defn- compile-use
-  [pattern accessor]
-  (fn [target] ((:use (meta pattern)) pattern (accessor target))))
+(defprotocol IMetaModifier
+  (match-meta [pattern target context]))
 
-(defn- compile-element
-  [pattern accessor]
-  (cond
-    (fn? pattern) #(boolean (pattern (accessor %)))
-    :else #(= (accessor %) pattern)))
+(defprotocol IGetterModifier
+  (with-getter [pattern target context]))
 
-(defn- compile-simple-map
-  [pattern accessor]
-  (let [getter (-> pattern meta :getter)]
-    (reduce
-      (if (-> pattern meta :|)
-        some-fn
-        every-pred)
-      (map
-        (fn [[k v]]
-          (let [acc (or (when getter #(getter % k)) (if (ifn? k) k #(get % k)))]
-            (compile-pattern v
-              (comp acc accessor))))
-        pattern))))
+(defprotocol IUseModifier
+  (use-compare [pattern target context]))
 
-(defn- compile-map
-  [pattern accessor]
-  (if (empty? pattern)
-    (if (strict? pattern)
-      (fn [target] (empty? (accessor target)))
-      (fn [_target] true))
-    (if (strict? pattern)
-      (every-pred
-        (compile-simple-map pattern accessor)
-        (fn [target] (every? (partial contains? pattern) (keys (accessor target)))))
-      (compile-simple-map pattern accessor))))
+(declare cpm)
 
-(defn- compile-simple-vector
-  [pattern accessor]
-  (let [subpatterns (map-indexed
-                      (fn [i p] (compile-pattern p (comp #(nth % i) accessor)))
-                      pattern)]
-    (fn [target]
-      (and
-        (<= (count pattern) (count (accessor target)))
-        (every? #(% target) subpatterns)))))
+(extend-type clojure.lang.AFn
+  IMatchable
+  (compile-matcher [pattern target context]
+    [:apply pattern [:access target context]]))
 
-(defn- compile-vector
-  [pattern accessor]
-  (if (strict? pattern)
-    (every-pred
-      (fn [target] (= (count pattern) (count (accessor target))))
-      (compile-simple-vector pattern accessor))
-    (compile-simple-vector pattern accessor)))
+(extend-type clojure.lang.APersistentSet
+  IMatchable
+  (compile-matcher [pattern target context]
+    (into
+     [:or]
+     (map
+      (fn [p] (cpm p target context))
+      pattern))))
 
-(defn- compile-seq
-  [pattern accessor]
-  (fn [value]
-    (let [n (count (accessor value))]
-      (every?
-        boolean
-        (map
-          #(apply % [value])
-          (take n
-            (map-indexed
-              (fn [i p]
-                (compile-pattern p
-                  (comp #(nth % i nil) accessor)))
-              pattern)))))))
+(extend-type clojure.lang.APersistentSet
+  IStrictModifier
+  (strictly [pattern target context]
+    (into
+     [:xor]
+     (map
+      (fn [p] (cpm p target context))
+      pattern))))
 
-(defn- compile-set
-  [pattern accessor]
-  (let [subpatterns (map #(compile-pattern % accessor) pattern)]
-    (cond
-      (strict? pattern)
-      (fn [target]
-        (= 1 (count (filter identity (map (fn [sp] (sp target)) subpatterns)))))
-      (-> pattern meta :&)
-      (fn [target]
-        (every? identity (map (fn [sp] (sp target)) subpatterns)))
-      :else
-      (fn [target]
-        (seq (filter identity (map (fn [sp] (sp target)) subpatterns)))))))
+(extend-type clojure.lang.APersistentSet
+  IConjunctiveModifier
+  (conjunctively [pattern target context]
+    (cpm pattern target context)))
 
-(defn- compile-regex
-  [pattern accessor]
-  (fn [value]
-    (boolean (re-matches pattern (-> value accessor str)))))
+(extend-type clojure.lang.APersistentSet
+  IDisjunctiveModifier
+  (disjunctively [pattern target context]
+    (assoc (cpm pattern target context) 0 :and)))
 
-(def ^:private regex-type (type #""))
+(extend-type java.util.regex.Pattern
+  IMatchable
+  (compile-matcher [pattern target context]
+    [:apply re-matches pattern [:apply str target]]))
 
-(defn- regex?
-  [any]
-  (= (type any) regex-type))
+(extend-type clojure.lang.APersistentVector
+  IMatchable
+  (compile-matcher [pattern target context]
+    (into
+     [:and]
+     (map
+      (fn [p i] (cpm p target (update context :accessor conj i)))
+      pattern
+      (range)))))
 
-(defn compile-pattern
-  ([pattern]
-   (compile-pattern pattern identity))
-  ([pattern accessor]
-   (cond
-     (-> pattern meta :*)
-     (compile-star pattern accessor)
+(extend-type clojure.lang.APersistentVector
+  IStrictModifier
+  (strictly [pattern target context]
+    [:and
+     [:apply = [:apply count pattern] [:apply count [:access target context]]]
+     (cpm pattern target context)]))
 
-     (-> pattern meta :meta)
-     (compile-meta pattern accessor)
+(extend-type clojure.lang.ASeq
+  IConjunctiveModifier
+  (conjunctively [pattern target context]
+    (into [:or] (rest (cpm pattern target context)))))
 
-     (-> pattern meta :=)
-     (compile-use (with-meta pattern (assoc (meta pattern) :use =)) accessor)
+(extend-type clojure.lang.ASeq
+  IMatchable
+  (compile-matcher [pattern target context]
+    [:and
+     [:apply cpm (first pattern) [:apply first [:access target context]] (assoc context :accessor [])]
+     [:if [:apply empty? [:access target context]]
+      true
+      [:recur [:apply cpm [:constant (rest pattern)] [:apply rest [:constant target]] context]]]]))
 
-     (-> pattern meta :use)
-     (compile-use pattern accessor)
+(extend-type clojure.lang.ASeq
+  IStrictModifier
+  (strictly [pattern target context]
+    [:and
+     [:apply = [:apply count pattern] [:apply count [:access target context]]]
+     (cpm pattern target context)]))
 
-     (map? pattern)
-     (compile-map pattern accessor)
+(extend-type clojure.lang.ASeq
+  IConjunctiveModifier
+  (conjunctively [pattern target context]
+    (into [:or] (rest (cpm pattern target context)))))
 
-     (set? pattern)
-     (compile-set pattern accessor)
+(extend-type clojure.lang.APersistentMap
+  IMatchable
+  (compile-matcher [pattern target context]
+    (into [:and] (map #(cpm % target context) pattern))))
 
-     (vector? pattern) (compile-vector pattern accessor)
+(extend-type clojure.lang.APersistentMap
+  IStrictModifier
+  (strictly [pattern target context]
+    [:and
+     [:apply = [:apply keys pattern] [:apply keys target]]
+     (cpm pattern target context)]))
 
-     (seq? pattern) (compile-seq pattern accessor)
+(extend-type clojure.lang.APersistentMap
+  IConjunctiveModifier
+  (conjunctively [pattern target context]
+    (into [:or] (rest (cpm pattern target context)))))
 
-     (regex? pattern) (compile-regex pattern accessor)
+(extend-type clojure.lang.APersistentMap
+  IDisjunctiveModifier
+  (disjunctively [pattern target context]
+    (cpm pattern target context)))
 
-     :else (compile-element pattern accessor))))
+(extend-type clojure.lang.AMapEntry
+  IMatchable
+  (compile-matcher [pattern target context]
+    (cpm (val pattern) target
+      (update context :accessor conj (key pattern)))))
+
+(extend-type clojure.lang.Symbol
+  IMatchable
+  (compile-matcher [pattern target context]
+    (if (= pattern '_)
+      true
+      [:unify pattern target context])))
+
+(extend-type java.lang.Object
+  IMatchable
+  (compile-matcher [pattern target context]
+    [:apply = pattern [:access target context]]))
+
+(extend-type clojure.lang.IObj
+  IMetaModifier
+  (match-meta [pattern target {meta-pattern :meta :as context}]
+    [:and
+     (cpm meta-pattern target (update context :accessor conj meta))
+     (cpm pattern target context)]))
+
+(extend-type clojure.lang.IObj
+  IUseModifier
+  (use-compare [pattern target {:keys [use]}]
+    [:apply use pattern target]))
+
+(extend-type nil
+  IMatchable
+  (compile-matcher [pattern target context]
+    [:apply nil? [:access target context]]))
+
+(declare matches?)
+
+(defn star
+  [pattern target {:keys [*] :as context}]
+  (if (and (number? *) (> * 0))
+    (every? #(star pattern % (update context :* dec)) target)
+    [:apply every? #(matches? pattern %) [:access target context]]))
+
+(def modifiers
+  [[:* star]
+   [:meta match-meta]
+   [:use use-compare]
+   [:= (fn [pattern target context] (use-compare pattern target (assoc context :use =)))]
+   [:! strictly]
+   [:| conjunctively]
+   [:& disjunctively]
+   [:getter with-getter]])
+
+(def _ (constantly true))
+
+(defn cpm
+  [pattern target & [context]]
+  (let [[tag modifier] (and (meta pattern)
+                            (->> modifiers
+                                 (filter (fn [[k v]] (contains? (meta pattern) k)))
+                                 first))
+        meta-value (when tag (get (meta pattern) tag))
+        pattern (if tag (with-meta pattern (dissoc (meta pattern) tag)) pattern)
+        context (or context {:accessor []})]
+    (if modifier
+      (apply modifier [pattern target (assoc context tag meta-value)])
+      (apply compile-matcher [pattern target context]))))
 
 (defn matches?
-  "Given a pattern, and an expression, recursively determines
-  if the expression matches the pattern.
-
-  For f, a function, and x, any expression:
-
-    (match f e) => (f e)
-
-  For vector patterns, each ordinal spot is checked:
-
-    (matches? [p0 p1 p2] [t0 t1 t2]) =>
-        [t0 t1 t2 ...]
-          ↑  ↑  ↑      matches?
-        [p0 p1 p2 ...]
-
-    Vectors ensure their targets are at least as long as they are.
-    Strict vectors must have identical lengths.
-
-  For lazy sequence patterns, like vectors, each ordinal spot is checked:
-
-    (matches? (p0 p1 p2) (t0 t1 t2)) =>
-        (t0 t1 t2 ...)
-          ↑  ↑  ↑      matches?
-        (p0 p1 p2 ...)
-
-    Lazy seqs targets can be shorter, or longer, than they are.
-    Infinite sequences can be used, though if they are matched against
-    infinite targets, a infinite loop will happen
-
-  For m, a map with keyset {k1,k2,...,kn}, and n, a map:
-
-    (match m n) => (and (match (get m k1) (get n k1))
-                        (match (get m k2) (get n k2))
-                        ...
-
-    If the key is an ifn, it will be applied to the target instead.
-    Strict maps require that the pattern contains all keys of the target.
-
-  Set patterns are disjunctive, and only require one of their elements to match.
-
-    (match m n) => (or (match m0 n)
-                       (match m1 n)
-                       ...
-
-    Strict set patterns require exactly one element to match.
-
-  For any pattern not described above, equality is checked.
-
-    (match 1 2) => (= 1 2)
-
-  Given the expression passed matches the given pattern,
-  true will be returned. Otherwise, false will be returned.
-
-
-  Meta tag modifiers can enhance and change how each pattern functions.
-
-    ^:!
-      Strict modifier is defined for each pattern type
-    ^:=
-      Equality modifier forces equality to be used, rather than matches?
-    {^:use f}
-      Use modifier forces f to be used as predicate, rather than matches?
-    ^:*
-      Star modifier maps pattern over target, expecting all to match
-    {^:meta m}
-      Meta modifier matches m to the meta of the target
-  "
-  ([pattern]
-   (fn [target]
-     (try
-       (apply (compile-pattern pattern) [target])
-       (catch #?(:clj Exception :cljs :default) _ false))))
-  ([pattern expr]
-   (try
-     (apply (compile-pattern pattern) [expr])
-     (catch #?(:clj Exception :cljs :default) _ false))))
-
-(defmacro match
-  "Takes a subject expression, and a set of clauses.
-  Each clause should be of the form:
-
-    pattern resultant
-
-  For each clause, (match pattern expr) is performed. If it
-  returns logical true, the clause is a match and the resultant
-  is returned. A single default expression can follow the clauses
-  and its value will be returned if no clause matches. If no
-  default expression is provided, and no clause matches, nil will
-  be returned"
-  ([_expr]
-   nil)
-  ([_expr default]
-   `~default)
-  ([expr pattern result & statements]
-   `(if (matches? ~pattern ~expr)
-      ~result
-      ~(cons `match (cons expr statements)))))
+  [pattern target]
+  (interpret (cpm pattern target) {} nil))
