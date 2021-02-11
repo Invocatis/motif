@@ -31,6 +31,7 @@
   (t/testing "Vectors"
     (t/is (motif/matches? [pos? pos? neg?] [1 1 -1]))
     (t/is (motif/matches? [1 2] [1 2 3]))
+    (t/is (motif/matches? [nil] []))
     (t/is (not (motif/matches? [1] [])))))
 
 (t/deftest test-set
@@ -89,6 +90,10 @@
 ;         #{1 2 3} "Not at all"
 ;         #"Hello" true))))
 
+(t/deftest negative-tests
+  (t/testing "Negative Tests"
+    (t/is (not (motif/matches? (list 1 2) "asdf")))))
+
 (t/deftest readme-examples
   (t/testing "Readme Examples"
     (t/is (motif/matches? 1 1))
@@ -123,18 +128,21 @@
 
     (t/is (motif/matches? ^{:use #(= (set (keys %1)) (set (keys %2)))} {:x 1 :y 2} {:x 3 :y 4}))
 
-    (motif/matches? ^{:getter get} {pos? neg? neg? pos?} {pos? -2 neg? 2})
+    (t/is (motif/matches? ^{:getter get} {pos? neg? neg? pos?} {pos? -2 neg? 2}))
 
     (t/is (not (motif/matches? #{1 2} [1 2])))
 
     (t/is (motif/matches? ^:* #{1 2} [1 2]))
-    (motif/matches? ^{:* 1} (fn [n] (integer? n)) [[1 2] [3 4] [5 6]])
+    (t/is (motif/matches? ^{:* 1} (fn [n] (integer? n)) [[1 2] [3 4] [5 6]]))
     (t/is (motif/matches? {:y 1} ^{:x 1} {:y 1}))
 
     (t/is (not (motif/matches? ^{:meta {:x 2}} {:y 1} ^{:x 1} {:y 1})))
 
     (t/is (motif/matches? ^{:meta {:x ^:* #{1 2}}} {:y 1} ^{:x [1 2]} {:y 1}))
     (t/is (motif/matches? {:x 1} {:x 1 :y 2}))
+
+    (t/is (motif/matches? ^{:guard {count 2}} {:x pos? :y neg?} {:x 1 :y -2}))
+    (t/is (not (motif/matches? ^{:guard {count 2}} {:x pos? :y neg?} {:x 1 :y -2 :z 3})))
 
     (t/is (not (motif/matches? ^:! {:x 1} {:x 1 :y 2})))
 
@@ -148,9 +156,9 @@
 
     (t/is (not (motif/matches? ^:! [1 2 3] [1 2 3 4])))
 
-    (motif/matches? ^:| {:x 1 :y 2} {:x 1 :y 3})
+    (t/is (motif/matches? ^:| {:x 1 :y 2} {:x 1 :y 3}))
 
-    (motif/matches? ^:& #{pos? even?} -2)
+    (t/is (motif/matches? ^:& #{neg? even?} -2))
 
     (t/is (not (motif/matches? {:x 1 nil? true} {:x 1})))
 

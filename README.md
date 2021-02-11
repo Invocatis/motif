@@ -252,9 +252,9 @@ Here we find ourselves with a slight discomfort: It can increase tedium and decr
 ### Non-symmetry
 matches? is not symmetric! That is (matches? a b) does not imply (matches? b a). This is due to patterns being treated differently that their targets. Consider the following:
 ```clojure
-(matches {:x 1 nil? true} {:x 1}) ;=> false
+(matches? {:x 1 nil? true} {:x 1}) ;=> false
 
-(matches {:x 1} {:x 1 nil? true}) ;=> true
+(matches? {:x 1} {:x 1 nil? true}) ;=> true
 ```
 
 This asymmetry is due to how various structures are interpreted when they are used as patterns.
